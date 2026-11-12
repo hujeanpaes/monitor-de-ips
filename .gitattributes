@@ -1,0 +1,17 @@
+# Normaliza finales de línea en el repositorio (LF) y los adapta al sistema al hacer checkout
+* text=auto
+
+# Scripts de Windows: siempre CRLF (cmd.exe y PowerShell 5.1 lo esperan)
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Código fuente y web
+*.cs   text diff=csharp
+*.html text diff=html
+*.md   text
+
+# Binarios
+*.ico  binary
+*.png  binary
+*.exe  binary
