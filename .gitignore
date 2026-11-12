@@ -1,0 +1,16 @@
+# Salida de compilación y datos locales (se generan con build.bat / al usar el monitor)
+dist/
+*.exe
+*.7z
+*.zip
+
+# Datos personales del monitor si se ejecuta fuera de dist/
+config.json
+config.json.*
+logs/
+exports/
+
+# Varios
+*.tmp
+.vs/
+Thumbs.db

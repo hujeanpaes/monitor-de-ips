@@ -1,0 +1,1180 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Monitor de IPs</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#0a0e16; --bg2:#0d121c; --surface:#121927; --surface2:#172031; --hover:#1c2639;
+  --border:#212b3d; --border2:#2b374d; --text:#e7ebf3; --muted:#8c97ab; --dim:#5b667b;
+  --accent:#6d8cff; --accent-2:#9b7bff; --accent-soft:rgba(109,140,255,.14);
+  --ok:#2ecc71; --ok-soft:rgba(46,204,113,.13); --warn:#f5a524; --warn-soft:rgba(245,165,36,.14);
+  --bad:#ff4d5e; --bad-soft:rgba(255,77,94,.14); --pause:#7a8599; --pause-soft:rgba(122,133,153,.14);
+  --shadow:0 10px 40px rgba(0,0,0,.45); --radius:14px;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,"Courier New",monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  color-scheme:dark;
+}
+[data-theme=light]{
+  --bg:#f2f4f8; --bg2:#e9edf3; --surface:#ffffff; --surface2:#f6f8fb; --hover:#eef1f7;
+  --border:#e1e6ee; --border2:#cfd6e2; --text:#121826; --muted:#5d697e; --dim:#97a2b6;
+  --accent:#4a67f5; --accent-2:#7c5cf0; --accent-soft:rgba(74,103,245,.10);
+  --ok:#16a34a; --ok-soft:rgba(22,163,74,.10); --warn:#d97706; --warn-soft:rgba(217,119,6,.11);
+  --bad:#e11d48; --bad-soft:rgba(225,29,72,.09); --pause:#64748b; --pause-soft:rgba(100,116,139,.10);
+  --shadow:0 8px 30px rgba(20,30,60,.10);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;border:2px solid var(--bg)}::-webkit-scrollbar-track{background:transparent}
+svg{flex:none}
+
+/* ---------- top bar ---------- */
+.top{height:64px;display:flex;align-items:center;gap:18px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 4px 16px var(--accent-soft)}
+.brand h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em;white-space:nowrap}
+.brand .sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pills{display:flex;gap:8px;margin-left:8px}
+.pill{display:flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.pill b{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums}
+.pill i{width:8px;height:8px;border-radius:50%}
+.pill.all i{background:var(--accent)}
+.pill.ok i{background:var(--ok)}.pill.bad i{background:var(--bad)}.pill.pause i{background:var(--pause)}
+.pill.bad.on{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)}
+.pill.bad.on b{color:var(--bad)}
+.pill.sel{outline:2px solid var(--accent);outline-offset:1px}
+.spacer{flex:1}
+.search{position:relative;display:flex;align-items:center}
+.search svg{position:absolute;left:10px;color:var(--dim);pointer-events:none}
+.search input{width:240px;height:36px;padding:0 12px 0 33px;border-radius:10px;border:1px solid var(--border);background:var(--surface);outline:none;transition:border-color .15s,width .2s}
+.search input:focus{border-color:var(--accent);width:290px}
+.btn{height:36px;display:inline-flex;align-items:center;gap:7px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:550;white-space:nowrap;transition:background .15s,border-color .15s,transform .05s}
+.btn:hover{background:var(--hover);border-color:var(--border2)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border-color:transparent;color:#fff;box-shadow:0 4px 14px var(--accent-soft)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{background:var(--bad);border-color:transparent;color:#fff}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--hover)}
+.btn.sm{height:30px;padding:0 10px;font-size:13px;border-radius:8px}
+.ibtn{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--muted);position:relative;transition:background .15s,color .15s}
+.ibtn:hover{background:var(--hover);color:var(--text)}
+.ibtn.on{color:var(--accent)}
+.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;display:none;place-items:center;border:2px solid var(--bg2)}
+.badge.show{display:grid}
+.menu-wrap{position:relative}
+.menu{position:absolute;right:0;top:44px;min-width:250px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:50;display:none}
+.menu.open{display:block;animation:pop .14s ease-out}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 10px;border:0;background:none;border-radius:8px;cursor:pointer;text-align:left}
+.menu button:hover{background:var(--hover)}
+.menu button small{display:block;color:var(--muted);font-size:12px}
+.menu hr{border:0;border-top:1px solid var(--border);margin:5px 4px}
+.menu button.danger-item{color:var(--bad)}
+.menu button.danger-item:hover{background:var(--bad-soft)}
+.menu .chip{margin-left:4px;vertical-align:1px}
+/* escanear red */
+#dlgScan{width:900px}
+.sc-nets{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-2px 0 12px;font-size:12.5px;color:var(--muted)}
+.sc-nets button{border:1px solid var(--border);background:var(--bg2);border-radius:999px;padding:3px 11px;cursor:pointer;font-family:var(--mono);font-size:12px}
+.sc-nets button:hover{border-color:var(--accent);color:var(--accent)}
+.sc-nets button small{font-family:var(--sans);color:var(--dim);margin-left:4px}
+.sc-prog{margin-bottom:12px}
+.sc-bar{height:6px;border-radius:3px;background:var(--bg2);border:1px solid var(--border);overflow:hidden;margin-bottom:7px}
+.sc-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s}
+.sc-tools{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sc-check{display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;user-select:none}
+.sc-check input,#scBody input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;margin:0}
+#scBody td{white-space:nowrap}
+#scBody tr.dis td{color:var(--dim)}
+#scBody tr:not(.dis){cursor:pointer}
+#scBody tr:not(.dis):hover td{background:var(--hover)}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.tag.new{background:var(--ok-soft);color:var(--ok)}
+.tag.mon{background:var(--pause-soft);color:var(--muted)}
+.tag.arp{background:var(--warn-soft);color:var(--warn);margin-left:4px}
+.sc-foot{align-items:flex-end;gap:12px;border-top:1px solid var(--border);margin-top:14px}
+/* papelera */
+#dlgTrash{width:680px}
+.tr-list{border:1px solid var(--border);border-radius:12px;overflow:auto;max-height:52vh}
+.ti{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.ti:last-child{border-bottom:0}
+.ti .who{flex:1;min-width:0}
+.ti .who b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti .who small{color:var(--muted);font-family:var(--mono);font-size:12px}
+.ti .when{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.ti .when.soon{color:var(--warn)}
+.trash-empty{padding:40px 10px;text-align:center;color:var(--dim)}
+.toast .act{margin-left:auto;align-self:center;border:1px solid var(--border2);background:var(--surface2);border-radius:8px;padding:4px 10px;font-weight:600;cursor:pointer;white-space:nowrap}
+.toast .act:hover{background:var(--hover)}
+
+/* ---------- layout ---------- */
+.layout{display:flex;height:calc(100% - 64px)}
+main{flex:1;overflow:auto;padding:20px 22px 40px}
+.group{margin-bottom:26px}
+.group-h{display:flex;align-items:center;gap:10px;margin:0 2px 12px;color:var(--muted);font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.07em}
+.group-h .line{flex:1;height:1px;background:var(--border)}
+.group-h .gstat{font-weight:500;text-transform:none;letter-spacing:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+
+/* ---------- cards ---------- */
+.card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 12px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .15s;overflow:hidden}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--c);opacity:.9}
+.card{--c:var(--dim);--cs:transparent}
+.card.s-ok{--c:var(--ok);--cs:var(--ok-soft)}
+.card.s-warn{--c:var(--warn);--cs:var(--warn-soft)}
+.card.s-bad{--c:var(--bad);--cs:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 50%,var(--border));background:linear-gradient(180deg,var(--bad-soft),var(--surface) 70%)}
+.card.s-pause{--c:var(--pause);--cs:var(--pause-soft);opacity:.72}
+.card.s-bad{animation:alarm 1.6s ease-in-out infinite}
+.card.flash{animation:flash .5s ease-in-out 4}
+@keyframes alarm{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px var(--bad-soft),0 0 22px var(--bad-soft)}}
+@keyframes flash{50%{transform:scale(1.015);box-shadow:0 0 0 3px var(--c)}}
+.c-top{display:flex;align-items:flex-start;gap:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c);margin-top:6px;flex:none;box-shadow:0 0 0 4px var(--cs)}
+.s-ok .dot,.s-bad .dot{animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--c)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.c-title{flex:1;min-width:0}
+.c-name{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-host{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-acts{display:flex;gap:2px;opacity:0;transition:opacity .15s;margin:-4px -6px 0 0}
+.card:hover .c-acts,.card:focus-within .c-acts{opacity:1}
+.c-acts button{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer}
+.c-acts button:hover{background:var(--hover);color:var(--text)}
+.c-acts button.del:hover{color:var(--bad)}
+.c-mid{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 2px;gap:10px}
+.c-lat{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--c);line-height:1.1;white-space:nowrap}
+.c-lat .u{font-size:14px;font-weight:550;margin-left:3px;color:var(--muted)}
+.c-lat.down{font-size:17px;letter-spacing:.04em}
+.c-state{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.c-state b{color:var(--c);font-weight:600}
+canvas.spark{display:block;width:100%;height:58px;margin:6px 0 8px}
+.c-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;border-top:1px solid var(--border);padding-top:9px}
+.c-stats div{min-width:0}
+.c-stats label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:600}
+.c-stats b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.c-stats b.hot{color:var(--bad)}
+.c-stats b.warm{color:var(--warn)}
+.chip{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+.empty{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:70%;color:var(--muted);gap:10px}
+.empty.show{display:flex}
+.empty .big{width:76px;height:76px;border-radius:22px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);margin-bottom:6px}
+.empty h2{color:var(--text);margin:0;font-size:20px}
+
+/* ---------- events panel ---------- */
+aside.events{width:340px;flex:none;border-left:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;transition:margin-right .25s}
+aside.events.hidden{margin-right:-341px}
+.ev-head{display:flex;align-items:center;gap:8px;padding:16px 16px 10px}
+.ev-head h2{font-size:14px;margin:0;flex:1;font-weight:650}
+.ev-filter{display:flex;gap:4px;padding:0 16px 10px}
+.ev-filter button{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;color:var(--muted)}
+.ev-filter button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+#evList{flex:1;overflow:auto;padding:0 10px 20px}
+.ev{display:flex;gap:10px;padding:9px 8px;border-radius:10px;cursor:pointer}
+.ev:hover{background:var(--hover)}
+.ev .ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none}
+.ev.down .ico{background:var(--bad-soft);color:var(--bad)}
+.ev.up .ico{background:var(--ok-soft);color:var(--ok)}
+.ev.info .ico{background:var(--accent-soft);color:var(--accent)}
+.ev .txt{flex:1;min-width:0;font-size:13px}
+.ev .txt b{font-weight:600}
+.ev .txt small{display:block;color:var(--muted);font-size:12px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev time{font-size:11.5px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+.ev-empty{color:var(--dim);text-align:center;padding:40px 10px;font-size:13px}
+.ev-day{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);font-weight:650;padding:12px 8px 4px}
+
+/* ---------- dialogs ---------- */
+dialog{border:1px solid var(--border);border-radius:18px;background:var(--surface);color:var(--text);padding:0;box-shadow:var(--shadow);max-width:calc(100vw - 32px);max-height:calc(100vh - 40px)}
+dialog[open]{animation:pop .16s ease-out}
+dialog::backdrop{background:rgba(5,8,14,.55);backdrop-filter:blur(3px)}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.985)}to{opacity:1;transform:none}}
+.dlg-h{display:flex;align-items:center;gap:12px;padding:18px 20px 6px}
+.dlg-h h3{margin:0;font-size:17px;flex:1;font-weight:650;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dlg-h .x{width:32px;height:32px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.dlg-h .x:hover{background:var(--hover);color:var(--text)}
+.dlg-b{padding:12px 20px 4px}
+.dlg-f{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.field label{font-size:12.5px;color:var(--muted);font-weight:600}
+.field .hint{font-size:12px;color:var(--dim)}
+.inp{height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.inp{height:150px;padding:10px 12px;resize:vertical;font-family:var(--mono);font-size:13px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:14px}
+.tabs button{flex:1;border:0;background:none;padding:6px;border-radius:7px;cursor:pointer;color:var(--muted);font-weight:600}
+.tabs button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--border)}
+.switch:last-child{border-bottom:0}
+.switch div small{display:block;color:var(--muted);font-size:12px}
+.tg{appearance:none;width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;cursor:pointer;transition:background .2s;flex:none;margin:0}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.tg:checked{background:var(--accent)}.tg:checked::after{transform:translateX(18px)}
+.err{color:var(--bad);font-size:13px;min-height:18px}
+
+/* detail */
+#dlgDetail{width:980px}
+.d-sub{display:flex;align-items:center;gap:10px;color:var(--muted);font-family:var(--mono);font-size:13px}
+.d-stats{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin:4px 0 14px}
+.d-stat{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
+.d-stat label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:650}
+.d-stat b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+.d-chart{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 10px 6px;position:relative}
+.d-chart canvas{display:block;width:100%;height:240px}
+.d-tools{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.seg{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;padding:4px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.console{margin-top:14px;background:#0c0c0c;color:#cccccc;border-radius:12px;border:1px solid var(--border);font:12.5px/1.5 var(--mono);height:190px;overflow:auto;padding:10px 14px;white-space:pre}
+.console .to{color:#ff7b86}
+.console .hi{color:#f5c26b}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:5px 9px;font-size:12px;box-shadow:var(--shadow);white-space:nowrap;display:none;font-variant-numeric:tabular-nums}
+
+/* trace */
+#dlgTrace{width:860px}
+.tr-bar{display:flex;gap:8px;margin-bottom:12px}
+.tr-bar .inp{flex:1;font-family:var(--mono)}
+.tr-status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-bottom:10px;min-height:20px}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--border2);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tbl-wrap{border:1px solid var(--border);border-radius:12px;overflow:auto;max-height:52vh}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;background:var(--surface2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:9px 12px;font-weight:650;border-bottom:1px solid var(--border)}
+td{padding:7px 12px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+td.mono{font-family:var(--mono)}
+td.t{text-align:right;width:80px;font-family:var(--mono)}
+td .bar{height:5px;border-radius:3px;background:var(--accent);opacity:.8;margin-top:3px}
+td.n{width:44px;color:var(--muted)}
+.star{color:var(--dim)}
+tr.final td{background:var(--ok-soft)}
+
+/* toasts */
+#toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;z-index:100;pointer-events:none}
+.toast{pointer-events:auto;min-width:300px;max-width:420px;display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);animation:tin .25s ease-out;border-left:4px solid var(--accent)}
+.toast.bad{border-left-color:var(--bad)}.toast.ok{border-left-color:var(--ok)}
+.toast .t1{font-weight:650}.toast .t2{color:var(--muted);font-size:12.5px;font-family:var(--mono)}
+.toast.out{animation:tout .3s ease-in forwards}
+@keyframes tin{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes tout{to{opacity:0;transform:translateX(30px)}}
+.offline{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:var(--bad);color:#fff;padding:8px 16px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);display:none;z-index:120}
+.offline.show{display:block}
+
+@media (max-width:1100px){ .pills .pill.ok,.pills .pill.pause{display:none} .search input{width:170px} .search input:focus{width:200px} aside.events{position:fixed;right:0;top:64px;bottom:0;z-index:40;box-shadow:var(--shadow)} .d-stats{grid-template-columns:repeat(4,1fr)} }
+@media (max-width:760px){ .brand .sub,.btn .lbl{display:none} .search{display:none} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg></div>
+    <div><h1>Monitor de IPs</h1><div class="sub" id="clock">—</div></div>
+  </div>
+  <div class="pills">
+    <span class="pill all sel" data-f="" title="Ver todas"><i></i><b id="cAll">0</b> todas</span>
+    <span class="pill ok" data-f="ok" title="Filtrar en línea"><i></i><b id="cUp">0</b> en línea</span>
+    <span class="pill bad" data-f="bad" id="pillBad" title="Filtrar caídas"><i></i><b id="cDown">0</b> caídas</span>
+    <span class="pill pause" data-f="pause" title="Filtrar pausadas"><i></i><b id="cPause">0</b> pausadas</span>
+  </div>
+  <div class="spacer"></div>
+  <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar IP, nombre, grupo o rango (192.168.3.1-50)…" title="Busca por texto o filtra por rango: 192.168.3.1-50 · 192.168.3.1 - 192.168.3.100 · 10.64.12.0/24  (Ctrl+F)" autocomplete="off"></label>
+  <button class="btn primary" id="btnAdd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Añadir IP</span></button>
+  <button class="btn" id="btnTrace"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><span class="lbl">Tracert</span></button>
+  <button class="btn" id="btnScan" title="Descubrir IPs activas en un rango"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></svg><span class="lbl">Escanear red</span></button>
+  <button class="ibtn" id="btnEvents" title="Panel de eventos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="evBadge">0</span></button>
+  <div class="menu-wrap">
+    <button class="ibtn" id="btnMenu" title="Más opciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+    <div class="menu" id="menu">
+      <button data-act="exp-events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><div>Exportar eventos<small>Caídas y recuperaciones (CSV)</small></div></button>
+      <button data-act="exp-summary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div>Exportar resumen<small>Estadísticas por IP (CSV)</small></div></button>
+      <button data-act="exp-samples"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><div>Exportar latencias<small>Cada respuesta, últimos 15 min (CSV)</small></div></button>
+      <hr>
+      <button data-act="open-logs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div>Abrir carpeta de logs<small>Historial diario automático</small></div></button>
+      <button data-act="pause-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5v14M15 5v14"/></svg><div>Pausar todas</div></button>
+      <button data-act="resume-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4l12 8-12 8z"/></svg><div>Reanudar todas</div></button>
+      <hr>
+      <button data-act="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg><div>Papelera <span class="chip" id="trashCount" style="display:none"></span><small>Recupera IPs eliminadas (30 días)</small></div></button>
+      <button data-act="clear-all" class="danger-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="m10 11 4 4M14 11l-4 4"/></svg><div>Eliminar todas las IPs…<small>Se mueven a la papelera</small></div></button>
+      <hr>
+      <button data-act="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><div>Ajustes</div></button>
+      <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor</div></button>
+    </div>
+  </div>
+  <button class="ibtn" id="btnSound" title="Sonido de alertas"></button>
+  <button class="ibtn" id="btnTheme" title="Cambiar tema"></button>
+</header>
+
+<div class="layout">
+  <main id="main">
+    <div id="groups"></div>
+    <div class="empty" id="empty">
+      <div class="big"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg></div>
+      <h2 id="emptyTitle">Aún no hay IPs</h2>
+      <div id="emptyText">Añade las IPs o equipos que vigilas a diario y verás su estado en tiempo real.</div>
+      <button class="btn primary" id="btnAdd2" style="margin-top:8px">Añadir IP</button>
+    </div>
+  </main>
+  <aside class="events" id="events">
+    <div class="ev-head"><h2>Eventos</h2><button class="btn ghost sm" id="evClear" title="Limpiar la lista (el log en disco se conserva)">Limpiar</button><button class="ibtn" style="width:30px;height:30px" id="evClose" title="Ocultar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="ev-filter" id="evFilter"><button data-f="all" class="on">Todos</button><button data-f="down">Caídas</button><button data-f="up">Recuperadas</button></div>
+    <div id="evList"></div>
+  </aside>
+</div>
+
+<!-- Añadir / editar -->
+<dialog id="dlgTarget">
+  <form method="dialog" id="fTarget" style="width:500px;max-width:100%">
+    <div class="dlg-h"><h3 id="tTitle">Añadir IP</h3><button type="button" class="x" data-close>✕</button></div>
+    <div class="dlg-b">
+      <div class="tabs" id="tTabs"><button type="button" data-t="one" class="on">Una IP</button><button type="button" data-t="many">Varias a la vez</button></div>
+      <div id="tOne">
+        <div class="field"><label>IP o nombre de host</label><input class="inp" id="tHost" placeholder="10.64.12.1" style="font-family:var(--mono)" autocomplete="off"></div>
+        <div class="field"><label>Nombre (opcional)</label><input class="inp" id="tName" placeholder="Router sede central" autocomplete="off"></div>
+      </div>
+      <div id="tMany" style="display:none">
+        <div class="field"><label>Una por línea</label><textarea class="inp" id="tBulk" placeholder="10.64.12.1 Router sede&#10;Switch planta 2;172.17.16.205&#10;10.225.146.130"></textarea><span class="hint">Formato libre: "IP nombre", "nombre;IP" o sólo la IP. También puedes pegar líneas de ping.</span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Grupo</label><input class="inp" id="tGroup" list="groupList" placeholder="Sin grupo" autocomplete="off"><datalist id="groupList"></datalist></div>
+        <div class="field"><label>Intervalo (segundos)</label><input class="inp" id="tInterval" type="number" min="0.25" step="0.25" value="1"></div>
+      </div>
+      <div class="err" id="tErr"></div>
+    </div>
+    <div class="dlg-f"><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary" id="tSave">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Detalle -->
+<dialog id="dlgDetail">
+  <div class="dlg-h">
+    <span class="dot" id="dDot" style="margin-top:0"></span>
+    <div style="flex:1;min-width:0"><h3 id="dTitle">—</h3><div class="d-sub"><span id="dHost"></span><span id="dGroup"></span></div></div>
+    <button class="btn sm" id="dPause"></button>
+    <button class="btn sm" id="dTrace">Tracert</button>
+    <button class="btn sm" id="dEdit">Editar</button>
+    <button class="btn sm ghost" id="dReset" title="Reiniciar estadísticas">Reiniciar</button>
+    <button class="x" data-close>✕</button>
+  </div>
+  <div class="dlg-b" style="padding-bottom:20px">
+    <div class="d-stats" id="dStats"></div>
+    <div class="d-chart">
+      <div class="d-tools"><b style="font-size:13px;flex:1">Latencia (ms)</b><div class="seg" id="dRange"><button data-r="60">1 min</button><button data-r="300" class="on">5 min</button><button data-r="900">15 min</button></div></div>
+      <canvas id="dCanvas"></canvas>
+      <div class="tip" id="dTip"></div>
+    </div>
+    <div class="console" id="dConsole"></div>
+  </div>
+</dialog>
+
+<!-- Tracert -->
+<dialog id="dlgTrace">
+  <div class="dlg-h"><h3>Tracert</h3><button class="btn sm ghost" id="trCopy">Copiar</button><button class="x" data-close>✕</button></div>
+  <div class="dlg-b" style="padding-bottom:20px">
+    <form class="tr-bar" id="trForm"><input class="inp" id="trHost" placeholder="IP o host de destino" list="hostList" autocomplete="off"><datalist id="hostList"></datalist>
+      <label class="btn" title="Resolver nombres (DNS inverso)" style="gap:8px"><input type="checkbox" class="tg" id="trResolve" checked> Nombres</label>
+      <button class="btn primary" id="trGo" type="submit">Iniciar</button></form>
+    <div class="tr-status" id="trStatus">Indica un destino y pulsa Iniciar.</div>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Dirección</th><th>Nombre</th><th style="text-align:right">1</th><th style="text-align:right">2</th><th style="text-align:right">3</th></tr></thead><tbody id="trBody"></tbody></table></div>
+  </div>
+</dialog>
+
+<!-- Ajustes -->
+<dialog id="dlgSettings">
+  <form method="dialog" id="fSettings" style="width:520px;max-width:100%">
+    <div class="dlg-h"><h3>Ajustes</h3><button type="button" class="x" data-close>✕</button></div>
+    <div class="dlg-b">
+      <div class="row2">
+        <div class="field"><label>Tiempo de espera (ms)</label><input class="inp" type="number" id="sTimeout" min="200" max="10000" step="100"></div>
+        <div class="field"><label>Fallos seguidos = caída</label><input class="inp" type="number" id="sDown" min="1" max="50"></div>
+      </div>
+      <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" type="number" id="sHigh" min="1"><span class="hint">Por encima de este valor la tarjeta se pone en ámbar.</span></div>
+      <div class="switch"><div>Sonido de alerta<small>Pitido al caer o recuperarse una IP</small></div><input type="checkbox" class="tg" id="sSound"></div>
+      <div class="switch"><div>Notificaciones de Windows<small>Aviso aunque la ventana esté minimizada</small></div><input type="checkbox" class="tg" id="sNotify"></div>
+      <div class="switch"><div>Probar alerta<small>Escucha cómo suena una caída</small></div><button type="button" class="btn sm" id="sTest">Probar</button></div>
+      <div class="field" style="margin-top:12px"><label>Carpeta de datos</label><div class="hint" id="sDir" style="font-family:var(--mono);word-break:break-all"></div></div>
+    </div>
+    <div class="dlg-f"><span class="hint" style="flex:1;align-self:center;color:var(--dim);font-size:12px" id="sVer"></span><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary">Guardar</button></div>
+  </form>
+</dialog>
+
+<!-- Confirmación -->
+<dialog id="dlgConfirm">
+  <div style="width:440px;max-width:100%">
+    <div class="dlg-h"><span id="cIcon" style="width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--bad-soft);color:var(--bad)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg></span><h3 id="cTitle">¿Seguro?</h3></div>
+    <div class="dlg-b" id="cText" style="color:var(--muted)"></div>
+    <div class="dlg-f"><button class="btn" data-close id="cCancel">Cancelar</button><button class="btn danger" id="cOk">Eliminar</button></div>
+  </div>
+</dialog>
+
+<!-- Escanear red -->
+<dialog id="dlgScan">
+  <div class="dlg-h"><h3>Escanear red</h3><button class="x" data-close>✕</button></div>
+  <div class="dlg-b">
+    <form class="tr-bar" id="scForm">
+      <input class="inp" id="scRange" placeholder="192.168.3.1 - 192.168.3.254   ·   192.168.3.1-254   ·   192.168.3.0/24" autocomplete="off">
+      <button class="btn primary" id="scGo" type="submit">Escanear</button>
+    </form>
+    <div class="sc-nets" id="scNets"></div>
+    <div class="sc-prog"><div class="sc-bar"><i id="scBar"></i></div><div class="tr-status" id="scStatus" style="margin:0">Indica un rango y pulsa Escanear. Máximo 4096 IPs por escaneo.</div></div>
+    <div class="sc-tools">
+      <label class="sc-check"><input type="checkbox" id="scAll"> Seleccionar todas las nuevas</label>
+      <span class="spacer"></span>
+      <input class="inp" id="scFilter" placeholder="Filtrar resultados…" style="height:32px;width:220px" autocomplete="off">
+    </div>
+    <div class="tbl-wrap" style="max-height:42vh"><table><thead><tr><th style="width:36px"></th><th>IP</th><th>Nombre</th><th>MAC</th><th style="text-align:right">Latencia</th><th>Estado</th></tr></thead><tbody id="scBody"></tbody></table></div>
+  </div>
+  <div class="dlg-f sc-foot">
+    <div class="field" style="margin:0;flex:1"><label>Grupo para las nuevas</label><input class="inp" id="scGroup" list="groupList" placeholder="Sin grupo" autocomplete="off"></div>
+    <div class="field" style="margin:0;width:120px"><label>Intervalo (s)</label><input class="inp" id="scInterval" type="number" min="0.25" step="0.25" value="1"></div>
+    <button class="btn primary" id="scAdd" disabled style="align-self:flex-end">Añadir 0 IPs al monitor</button>
+  </div>
+</dialog>
+
+<!-- Papelera -->
+<dialog id="dlgTrash">
+  <div class="dlg-h"><h3>Papelera</h3><button class="btn sm" id="trRestoreAll">Restaurar todo</button><button class="btn sm ghost" id="trEmpty" style="color:var(--bad)">Vaciar papelera</button><button class="x" data-close>✕</button></div>
+  <div class="dlg-b" style="padding-bottom:20px">
+    <div class="hint" style="color:var(--muted);font-size:13px;margin-bottom:10px">Las IPs eliminadas se guardan aquí 30 días. Después se borran definitivamente.</div>
+    <div class="tr-list" id="trashList"></div>
+  </div>
+</dialog>
+
+<div id="toasts"></div>
+<div class="offline" id="offline">Sin conexión con el monitor. ¿Se cerró la aplicación?</div>
+
+<script>
+"use strict";
+const TOKEN = "__TOKEN__";
+const MAXBUF = 900;
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const S = { seq:0, ev:0, targets:[], byId:{}, buf:{}, epoch:{}, events:[], settings:{}, loaded:false,
+            filter:"", filterRange:null, stateFilter:null, evFilter:"all", evClearSeq:+(localStorage.getItem("evClear")||0),
+            unseen:0, detailId:null, range:300, cards:{}, layoutSig:"", lastGroup:"" };
+
+// ------------------------------------------------------------ API
+async function api(method, url, body){
+  const r = await fetch(url, {method, headers:{"X-Token":TOKEN,"Content-Type":"application/json"}, body: body ? JSON.stringify(body) : undefined});
+  let j = {}; try { j = await r.json(); } catch(e){}
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+// Toda acción (POST) pide un refresco inmediato del estado, para que la UI lo refleje sin esperar al siguiente segundo.
+async function post(url, body){
+  const r = await api("POST", url, body || {});
+  if (url !== "/api/quit") refresh();
+  return r;
+}
+
+// ------------------------------------------------------------ formato
+function fmtMs(v){ if (v == null || v < 0) return "—"; if (v === 0) return "<1"; return v >= 100 ? Math.round(v) : (Math.round(v*10)/10); }
+function fmtDur(ms){
+  let s = Math.max(0, Math.floor(ms/1000));
+  const d = Math.floor(s/86400); s%=86400; const h = Math.floor(s/3600); s%=3600; const m = Math.floor(s/60); s%=60;
+  if (d) return d+"d "+h+"h"; if (h) return h+"h "+m+"m"; if (m) return m+"m "+s+"s"; return s+"s";
+}
+const pad = n => String(n).padStart(2,"0");
+function hms(t){ const d = new Date(t); return pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds()); }
+function dayLabel(t){
+  const d = new Date(t), today = new Date(); const y = new Date(); y.setDate(today.getDate()-1);
+  if (d.toDateString() === today.toDateString()) return "Hoy";
+  if (d.toDateString() === y.toDateString()) return "Ayer";
+  return d.toLocaleDateString("es", {weekday:"long", day:"numeric", month:"short"});
+}
+const title = t => t.name || t.host;
+
+// rangos IPv4: "a.b.c.d-50", "a.b.c.d - e.f.g.h", "a.b.c.d/24"
+function ip2n(s){
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(s).trim()); if (!m) return null;
+  const p = m.slice(1).map(Number); if (p.some(x => x > 255)) return null;
+  return ((p[0] << 24) >>> 0) + (p[1] << 16) + (p[2] << 8) + p[3];
+}
+function parseRange(q){
+  q = String(q).trim(); let m;
+  if ((m = /^([\d.]+)\s*\/\s*(\d{1,2})$/.exec(q))){
+    const n = ip2n(m[1]), b = +m[2]; if (n == null || b > 32) return null;
+    const mask = b === 0 ? 0 : (0xFFFFFFFF << (32 - b)) >>> 0, net = (n & mask) >>> 0;
+    return [net, (net | (~mask >>> 0)) >>> 0];
+  }
+  if ((m = /^([\d.]+)\s*-\s*([\d.]+)$/.exec(q))){
+    const a = ip2n(m[1]); if (a == null) return null;
+    let b = ip2n(m[2]);
+    if (b == null && /^\d{1,3}$/.test(m[2]) && +m[2] <= 255) b = ((a & 0xFFFFFF00) >>> 0) + (+m[2]);
+    if (b == null) return null;
+    return a <= b ? [a, b] : [b, a];
+  }
+  return null;
+}
+
+function cls(t){
+  if (t.state === "paused") return "s-pause";
+  if (t.state === "down") return "s-bad";
+  if (t.state === "unknown" && t.sent === 0) return "s-wait";
+  if (t.consec > 0) return "s-warn";
+  if (t.state === "up" && t.last >= S.settings.highLatencyMs) return "s-warn";
+  if (t.state === "up") return "s-ok";
+  return "s-warn";
+}
+function stateText(t, now){
+  const since = fmtDur(now - t.since);
+  if (t.state === "paused") return "<b>Pausada</b>";
+  if (t.state === "down") return "<b>Caída</b> hace " + since;
+  if (t.sent === 0) return "Iniciando…";
+  if (t.consec > 0) return "<b>" + t.consec + " sin respuesta</b>";
+  if (t.state === "up") return "<b>En línea</b> · " + since;
+  return "Comprobando…";
+}
+
+// ------------------------------------------------------------ colores (para canvas)
+let C = {};
+function readColors(){ const cs = getComputedStyle(document.documentElement); ["ok","warn","bad","pause","dim","muted","border","text","accent","surface"].forEach(k => C[k] = cs.getPropertyValue("--"+k).trim()); }
+function colorFor(c){ return c === "s-ok" ? C.ok : c === "s-warn" ? C.warn : c === "s-bad" ? C.bad : c === "s-pause" ? C.pause : C.dim; }
+function alpha(hex, a){ const n = parseInt(hex.slice(1),16); return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")"; }
+
+// ------------------------------------------------------------ gráfico
+function niceMax(v){ const steps=[5,10,20,25,50,100,150,200,250,300,400,500,750,1000,1500,2000,3000,5000,10000]; for (const s of steps) if (v <= s) return s; return Math.ceil(v/1000)*1000; }
+function drawChart(cv, samples, o){
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (!w || !h) return null;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
+  const g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+  const axes = !!o.axes, pl = axes?44:0, pr = axes?8:0, pt = axes?8:3, pb = axes?22:2;
+  const now = Date.now(), win = o.win*1000, t0 = now - win;
+  const pts = samples.filter(s => s[1] >= t0 - 2000);
+  let mx = 0; for (const s of pts) if (s[2] > mx) mx = s[2];
+  mx = niceMax(Math.max(axes ? 10 : 5, mx*1.15));
+  const X = t => pl + (t - t0) / win * (w - pl - pr), Y = v => pt + (1 - v/mx) * (h - pt - pb);
+  if (axes){
+    g.font = "11px Segoe UI, sans-serif"; g.textAlign = "right"; g.textBaseline = "middle";
+    for (let i=0;i<=4;i++){ const v = mx*i/4, y = Y(v); g.strokeStyle = alpha(C.muted,.15); g.lineWidth = 1; g.beginPath(); g.moveTo(pl,Math.round(y)+.5); g.lineTo(w-pr,Math.round(y)+.5); g.stroke(); g.fillStyle = C.dim; g.fillText(Math.round(v)+"", pl-8, y); }
+    g.textAlign = "center"; g.textBaseline = "top";
+    const step = o.win <= 60 ? 10 : o.win <= 300 ? 60 : 180;
+    for (let s=0; s<=o.win; s+=step){ const x = X(now - s*1000); g.fillStyle = C.dim; g.fillText(s===0 ? "ahora" : "-"+(s>=60? (s/60)+"m" : s+"s"), Math.min(Math.max(x, pl+14), w-pr-14), h-pb+6); }
+    if (o.high && o.high < mx){ const y = Y(o.high); g.setLineDash([4,4]); g.strokeStyle = alpha(C.warn,.55); g.beginPath(); g.moveTo(pl,y); g.lineTo(w-pr,y); g.stroke(); g.setLineDash([]); }
+  }
+  // sin respuesta: barras rojas
+  const bw = Math.max(2, (w-pl-pr) / Math.max(30, o.win / (o.interval||1)) * 0.8);
+  g.fillStyle = alpha(C.bad, axes ? .45 : .6);
+  for (const s of pts) if (s[2] < 0){ const x = X(s[1]); g.fillRect(x - bw/2, pt, bw, h-pt-pb); }
+  // línea por segmentos
+  const col = o.color || C.accent;
+  const segs = []; let cur = [];
+  for (const s of pts){ if (s[2] < 0){ if (cur.length) segs.push(cur); cur = []; } else cur.push(s); }
+  if (cur.length) segs.push(cur);
+  const grad = g.createLinearGradient(0, pt, 0, h-pb); grad.addColorStop(0, alpha(col,.28)); grad.addColorStop(1, alpha(col,0));
+  for (const sg of segs){
+    g.beginPath(); sg.forEach((s,i) => { const x = X(s[1]), y = Y(s[2]); i ? g.lineTo(x,y) : g.moveTo(x,y); });
+    if (sg.length === 1){ g.fillStyle = col; g.fillRect(X(sg[0][1])-1.5, Y(sg[0][2])-1.5, 3, 3); continue; }
+    g.strokeStyle = col; g.lineWidth = axes ? 1.8 : 1.6; g.lineJoin = "round"; g.stroke();
+    g.lineTo(X(sg[sg.length-1][1]), h-pb); g.lineTo(X(sg[0][1]), h-pb); g.closePath(); g.fillStyle = grad; g.fill();
+  }
+  return {X, Y, t0, win, pl, pr, w, h, pts};
+}
+
+// ------------------------------------------------------------ tarjetas
+const ICON = {
+  pause:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg>',
+  play:'<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg>',
+  trace:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg>',
+  edit:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  del:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  down:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+  up:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  sound:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>',
+  mute:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>',
+  moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+};
+
+function buildCard(t){
+  const el = document.createElement("div");
+  el.className = "card"; el.dataset.id = t.id; el.tabIndex = 0;
+  el.innerHTML = `
+    <div class="c-top"><span class="dot"></span>
+      <div class="c-title"><div class="c-name"></div><div class="c-host"></div></div>
+      <div class="c-acts">
+        <button data-a="pause" title="Pausar / reanudar"></button>
+        <button data-a="trace" title="Tracert">${ICON.trace}</button>
+        <button data-a="edit" title="Editar">${ICON.edit}</button>
+        <button data-a="del" class="del" title="Eliminar">${ICON.del}</button>
+      </div></div>
+    <div class="c-mid"><div class="c-lat"></div><div class="c-state"></div></div>
+    <canvas class="spark"></canvas>
+    <div class="c-stats"><div><label>Mín</label><b data-k="min"></b></div><div><label>Prom</label><b data-k="avg"></b></div><div><label>Máx</label><b data-k="max"></b></div><div><label>Pérdida</label><b data-k="loss"></b></div></div>`;
+  const q = s => el.querySelector(s);
+  return { el, name:q(".c-name"), host:q(".c-host"), lat:q(".c-lat"), state:q(".c-state"), cv:q("canvas"), pause:q('[data-a="pause"]'),
+           min:q('[data-k="min"]'), avg:q('[data-k="avg"]'), max:q('[data-k="max"]'), loss:q('[data-k="loss"]'), c:"" };
+}
+
+function matches(t){
+  if (S.stateFilter){ const c = cls(t); if (S.stateFilter === "ok" && c !== "s-ok" && c !== "s-warn") return false; if (S.stateFilter === "bad" && c !== "s-bad") return false; if (S.stateFilter === "pause" && c !== "s-pause") return false; }
+  if (!S.filter) return true;
+  const rg = S.filterRange;
+  if (rg){ const n = ip2n(t.host); return n != null && n >= rg[0] && n <= rg[1]; }
+  const f = S.filter.toLowerCase();
+  return (t.name+" "+t.host+" "+t.group).toLowerCase().includes(f);
+}
+
+function render(){
+  const now = Date.now();
+  const visible = S.targets.filter(matches);
+  // estructura (sólo cuando cambia)
+  const sig = visible.map(t => t.id+"|"+t.group).join(",");
+  if (sig !== S.layoutSig){
+    S.layoutSig = sig;
+    const groups = new Map();
+    for (const t of visible){ const g = t.group || ""; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(t); }
+    const root = $("#groups"); root.innerHTML = "";
+    const multi = groups.size > 1 || (groups.size === 1 && !groups.has(""));
+    for (const [g, list] of groups){
+      const sec = document.createElement("section"); sec.className = "group";
+      if (multi) sec.innerHTML = `<div class="group-h"><span>${esc(g || "Sin grupo")}</span><span class="gstat" data-g="${esc(g)}"></span><span class="line"></span></div>`;
+      const grid = document.createElement("div"); grid.className = "grid";
+      for (const t of list){ if (!S.cards[t.id]) S.cards[t.id] = buildCard(t); grid.appendChild(S.cards[t.id].el); }
+      sec.appendChild(grid); root.appendChild(sec);
+    }
+  }
+  for (const id in S.cards) if (!S.byId[id]) delete S.cards[id];
+
+  // contenido
+  for (const t of visible){
+    const k = S.cards[t.id]; if (!k) continue;
+    const c = cls(t);
+    if (k.c !== c){ k.el.classList.remove(k.c || "x"); k.el.classList.add(c); k.c = c; }
+    k.name.textContent = title(t);
+    k.host.textContent = t.name ? t.host : "ping cada " + (t.interval/1000) + " s";
+    if (t.state === "down") { k.lat.className = "c-lat down"; k.lat.textContent = "SIN RESPUESTA"; }
+    else if (t.state === "paused" || t.last < 0) { k.lat.className = "c-lat"; k.lat.innerHTML = "—"; }
+    else { k.lat.className = "c-lat"; k.lat.innerHTML = fmtMs(t.last) + '<span class="u">ms</span>'; }
+    k.state.innerHTML = stateText(t, now);
+    k.state.title = t.consec > 0 && t.error ? "Último error: " + t.error : "";
+    k.pause.innerHTML = t.paused ? ICON.play : ICON.pause;
+    k.min.textContent = fmtMs(t.min); k.avg.textContent = fmtMs(t.avg); k.max.textContent = fmtMs(t.max);
+    k.loss.textContent = t.window ? t.loss + "%" : "—";
+    k.loss.className = t.loss >= 10 ? "hot" : t.loss > 0 ? "warm" : "";
+    drawChart(k.cv, S.buf[t.id] || [], {win:120, color:colorFor(c), interval:t.interval/1000});
+  }
+  // stats de grupo
+  $$(".gstat").forEach(el => {
+    const list = S.targets.filter(t => (t.group||"") === el.dataset.g);
+    const down = list.filter(t => t.state === "down").length;
+    el.textContent = "· " + list.length + (list.length === 1 ? " equipo" : " equipos") + (down ? " · " + down + " caída" + (down>1?"s":"") : "");
+    el.style.color = down ? "var(--bad)" : "";
+  });
+
+  // contadores
+  const up = S.targets.filter(t => t.state === "up").length, dn = S.targets.filter(t => t.state === "down").length, pa = S.targets.filter(t => t.paused).length;
+  $("#cAll").textContent = S.targets.length; $("#cUp").textContent = up; $("#cDown").textContent = dn; $("#cPause").textContent = pa;
+  $("#pillBad").classList.toggle("on", dn > 0);
+  document.title = dn ? "(" + dn + ") Caídas · Monitor de IPs" : "Monitor de IPs";
+
+  const none = S.targets.length === 0, filteredOut = !none && visible.length === 0;
+  $("#empty").classList.toggle("show", none || filteredOut);
+  $("#emptyTitle").textContent = none ? "Aún no hay IPs" : "Nada coincide con el filtro";
+  $("#emptyText").textContent = none ? "Añade las IPs o equipos que vigilas a diario y verás su estado en tiempo real." : "Prueba con otra búsqueda o quita el filtro de estado.";
+  $("#btnAdd2").style.display = none ? "" : "none";
+
+  if (S.detailId) renderDetail();
+}
+
+// ------------------------------------------------------------ polling
+// Un único poll a la vez: si se pide un refresco mientras hay uno en curso, se repite justo al terminar.
+let failCount = 0, pollTimer = null, polling = false, pollAgain = false;
+function refresh(){ poll(); }
+async function poll(){
+  if (polling){ pollAgain = true; return; }
+  polling = true; clearTimeout(pollTimer);
+  try {
+    const r = await api("GET", "/api/state?since=" + S.seq + "&ev=" + S.ev);
+    failCount = 0; $("#offline").classList.remove("show");
+    S.seq = r.seq;
+    const tc = $("#trashCount"); tc.textContent = r.trashCount; tc.style.display = r.trashCount ? "" : "none";
+    const prevSettingsTheme = S.settings.theme;
+    S.settings = r.settings;
+    if (!S.loaded || prevSettingsTheme !== r.settings.theme) applyTheme(r.settings.theme);
+    S.targets = r.targets; S.byId = {};
+    for (const t of r.targets){
+      S.byId[t.id] = t;
+      if (S.epoch[t.id] !== t.epoch){ S.epoch[t.id] = t.epoch; S.buf[t.id] = []; }
+      const b = S.buf[t.id] || (S.buf[t.id] = []);
+      for (const s of t.samples) b.push(s);
+      if (b.length > MAXBUF) b.splice(0, b.length - MAXBUF);
+      delete t.samples;
+    }
+    for (const id in S.buf) if (!S.byId[id]) { delete S.buf[id]; delete S.epoch[id]; }
+    if (r.events.length){
+      for (const e of r.events){ S.events.push(e); S.ev = Math.max(S.ev, e.seq); if (S.loaded) onEvent(e); }
+      if (S.events.length > 1000) S.events.splice(0, S.events.length - 1000);
+      renderEvents();
+    }
+    if (!S.loaded){ S.loaded = true; applySettingsUI(); renderEvents(); }
+    render();
+  } catch(e){
+    if (++failCount >= 3) $("#offline").classList.add("show");
+  }
+  polling = false;
+  pollTimer = setTimeout(poll, pollAgain ? 0 : 1000);
+  pollAgain = false;
+}
+
+// ------------------------------------------------------------ alertas
+let actx = null;
+function beep(kind){
+  if (!S.settings.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    const seq = kind === "down" ? [[880,0],[660,.18],[440,.36]] : [[523,0],[784,.14]];
+    for (const [f, d] of seq){
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + d;
+      o.type = kind === "down" ? "square" : "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(kind === "down" ? .12 : .18, t+.02); g.gain.exponentialRampToValueAtTime(0.0001, t+.16);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.18);
+    }
+  } catch(e){}
+}
+function notify(titleTxt, body){
+  if (!S.settings.notify || !("Notification" in window) || Notification.permission !== "granted") return;
+  if (document.hasFocus()) return;
+  try { new Notification(titleTxt, {body, icon:"/favicon.ico", tag:"mon-"+titleTxt, requireInteraction:false}); } catch(e){}
+}
+function onEvent(e){
+  const name = e.name || e.host;
+  if (e.type === "down"){
+    toast("bad", name + " sin respuesta", e.host + (e.detail ? " · " + e.detail : ""));
+    beep("down"); notify("⚠ " + name + " caída", e.host + " no responde");
+    const k = S.cards[e.id]; if (k){ k.el.classList.remove("flash"); void k.el.offsetWidth; k.el.classList.add("flash"); }
+    if ($("#events").classList.contains("hidden")){ S.unseen++; updateBadge(); }
+  } else if (e.type === "up"){
+    toast("ok", name + " recuperada", e.host + " · estuvo caída " + fmtDur(e.dur*1000));
+    beep("up"); notify("✔ " + name + " recuperada", "Estuvo caída " + fmtDur(e.dur*1000));
+  }
+}
+function updateBadge(){ const b = $("#evBadge"); b.textContent = S.unseen; b.classList.toggle("show", S.unseen > 0); }
+function toast(kind, t1, t2, ms, action){
+  const el = document.createElement("div"); el.className = "toast " + (kind||"");
+  el.innerHTML = `<div style="color:var(--${kind==="bad"?"bad":kind==="ok"?"ok":"accent"})">${kind==="bad"?ICON.down:kind==="ok"?ICON.up:ICON.info}</div><div style="min-width:0"><div class="t1">${esc(t1)}</div>${t2?`<div class="t2">${esc(t2)}</div>`:""}</div>`;
+  $("#toasts").appendChild(el);
+  const kill = () => { el.classList.add("out"); setTimeout(() => el.remove(), 300); };
+  if (action){ const b = document.createElement("button"); b.className = "act"; b.textContent = action.label; b.onclick = e => { e.stopPropagation(); kill(); action.fn(); }; el.appendChild(b); }
+  el.onclick = kill; setTimeout(kill, ms || (kind === "bad" ? 9000 : 5000));
+  while ($("#toasts").children.length > 5) $("#toasts").firstChild.remove();
+}
+
+// ------------------------------------------------------------ eventos
+function renderEvents(){
+  const list = S.events.filter(e => e.seq > S.evClearSeq && (S.evFilter === "all" || e.type === S.evFilter)).reverse().slice(0, 400);
+  const box = $("#evList");
+  if (!list.length){ box.innerHTML = `<div class="ev-empty">Sin eventos todavía.<br>Aquí aparecerán las caídas y recuperaciones.</div>`; return; }
+  let html = "", lastDay = "";
+  for (const e of list){
+    const day = dayLabel(e.t); if (day !== lastDay){ html += `<div class="ev-day">${esc(day)}</div>`; lastDay = day; }
+    const n = esc(e.name || e.host);
+    let k = "info", txt = "";
+    switch (e.type){
+      case "down": k = "down"; txt = `<b>${n}</b> sin respuesta`; break;
+      case "up": k = "up"; txt = `<b>${n}</b> recuperada <span style="color:var(--muted)">· caída ${fmtDur(e.dur*1000)}</span>`; break;
+      case "added": txt = `<b>${n}</b> añadida`; break;
+      case "removed": txt = `<b>${n}</b> movida a la papelera`; break;
+      case "restored": txt = `<b>${n}</b> restaurada`; break;
+      case "cleared": txt = `<b>Se eliminaron todas las IPs</b>`; break;
+      case "scan": txt = `<b>${n}</b>`; break;
+      case "paused": txt = `<b>${n}</b> pausada`; break;
+      case "resumed": txt = `<b>${n}</b> reanudada`; break;
+      default: txt = esc(e.type);
+    }
+    html += `<div class="ev ${k}" data-id="${esc(e.id)}"><div class="ico">${ICON[k]}</div><div class="txt">${txt}<small>${esc(e.host)}${e.type==="down" && e.detail ? " · " + esc(e.detail) : ""}</small></div><time>${hms(e.t)}</time></div>`;
+  }
+  box.innerHTML = html;
+}
+$("#evList").addEventListener("click", ev => { const el = ev.target.closest(".ev"); if (el && S.byId[el.dataset.id]) openDetail(el.dataset.id); });
+$("#evFilter").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; S.evFilter = b.dataset.f; $$("#evFilter button").forEach(x => x.classList.toggle("on", x === b)); renderEvents(); });
+$("#evClear").onclick = () => { S.evClearSeq = S.ev; try { localStorage.setItem("evClear", S.ev); } catch(e){} renderEvents(); };
+function setEventsVisible(v, save){
+  $("#events").classList.toggle("hidden", !v); $("#btnEvents").classList.toggle("on", v);
+  if (v){ S.unseen = 0; updateBadge(); }
+  if (save) post("/api/settings", {showEvents:v}).catch(()=>{});
+}
+$("#btnEvents").onclick = () => setEventsVisible($("#events").classList.contains("hidden"), true);
+$("#evClose").onclick = () => setEventsVisible(false, true);
+
+// ------------------------------------------------------------ tema / sonido
+function applyTheme(th){ document.documentElement.dataset.theme = th === "light" ? "light" : "dark"; $("#btnTheme").innerHTML = th === "light" ? ICON.moon : ICON.sun; readColors(); }
+function applySettingsUI(){
+  $("#btnSound").innerHTML = S.settings.sound ? ICON.sound : ICON.mute; $("#btnSound").classList.toggle("on", S.settings.sound);
+  $("#btnSound").title = S.settings.sound ? "Sonido de alertas: activado" : "Sonido de alertas: silenciado";
+  setEventsVisible(S.settings.showEvents && window.innerWidth > 1100, false);
+}
+$("#btnTheme").onclick = async () => { const th = S.settings.theme === "light" ? "dark" : "light"; S.settings.theme = th; applyTheme(th); render(); S.settings = await post("/api/settings", {theme:th}); };
+$("#btnSound").onclick = async () => { S.settings = await post("/api/settings", {sound:!S.settings.sound}); applySettingsUI(); if (S.settings.sound) beep("up"); };
+
+// ------------------------------------------------------------ acciones de tarjeta
+$("#groups").addEventListener("click", async ev => {
+  const card = ev.target.closest(".card"); if (!card) return;
+  const id = card.dataset.id, t = S.byId[id]; if (!t) return;
+  const a = ev.target.closest("[data-a]");
+  if (!a) return openDetail(id);
+  ev.stopPropagation();
+  if (a.dataset.a === "pause") await post("/api/targets/pause", {id, paused:!t.paused});
+  if (a.dataset.a === "trace") openTrace(t.host, true);
+  if (a.dataset.a === "edit") openTarget(t);
+  if (a.dataset.a === "del") confirmDelete(t);
+});
+$("#groups").addEventListener("keydown", ev => { if (ev.key === "Enter" && ev.target.classList.contains("card")) openDetail(ev.target.dataset.id); });
+
+function askConfirm(o){
+  $("#cTitle").textContent = o.title;
+  $("#cText").innerHTML = o.html;
+  $("#cOk").textContent = o.ok || "Eliminar";
+  const d = $("#dlgConfirm"); d.showModal();
+  setTimeout(() => $("#cCancel").focus(), 30); // por defecto, el foco en Cancelar
+  $("#cOk").onclick = async () => { d.close(); try { await o.onOk(); } catch(e){ toast("bad", "Error", e.message); } };
+}
+function confirmDelete(t){
+  askConfirm({ title:"¿Eliminar " + title(t) + "?", ok:"Mover a la papelera",
+    html:"Se dejará de monitorear <b>" + esc(t.host) + "</b>.<br>Podrás recuperarla desde la <b>Papelera</b> durante 30 días.",
+    onOk: async () => {
+      if (S.detailId === t.id) $("#dlgDetail").close();
+      await post("/api/targets/delete", {id:t.id});
+      toast("", title(t) + " movida a la papelera", null, 8000, {label:"Deshacer", fn: () => restoreTrash([t.id])});
+    }});
+}
+function confirmClearAll(){
+  const n = S.targets.length;
+  if (!n){ toast("", "No hay IPs que eliminar"); return; }
+  askConfirm({ title:"¿Eliminar las " + n + " IPs?", ok:"Sí, eliminar todas",
+    html:"Se dejarán de monitorear <b>todas</b> las IPs (" + n + ").<br>Irán a la <b>Papelera</b> y podrás recuperarlas durante 30 días.",
+    onOk: async () => {
+      const ids = S.targets.map(t => t.id);
+      if (S.detailId) $("#dlgDetail").close();
+      const r = await post("/api/targets/clearall");
+      toast("", r.removed + " IPs movidas a la papelera", null, 10000, {label:"Deshacer", fn: () => restoreTrash(ids)});
+    }});
+}
+
+// ------------------------------------------------------------ escanear red
+let scJob = null, scTimer = null, scSel = new Set(), scSig = "", scGroupEdited = false, scNetsLoaded = false;
+const scSeen = new Set(); // IPs ya vistas por escaneo (para preseleccionar sólo las recién detectadas)
+async function openScan(){
+  const d = $("#dlgScan"); if (!d.open) d.showModal();
+  $("#groupList").innerHTML = [...new Set(S.targets.map(x => x.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("");
+  if (!scNetsLoaded){
+    try {
+      const r = await api("GET", "/api/scan/subnets"); scNetsLoaded = true;
+      $("#scNets").innerHTML = r.subnets.length ? "Redes de este equipo:" + r.subnets.map(s => `<button type="button" data-r="${esc(s.cidr)}" title="Tu IP: ${esc(s.ip)}">${esc(s.cidr)}<small>${esc(s.name)}</small></button>`).join("") : "";
+      if (!$("#scRange").value && r.subnets.length) $("#scRange").value = r.subnets[0].cidr;
+    } catch(e){}
+  }
+  if (scJob && scJob.status !== "running"){ try { scJob = await api("GET", "/api/scan?id=" + scJob.id); scSig = ""; renderScan(); } catch(e){} }
+  setTimeout(() => $("#scRange").focus(), 30);
+}
+$("#btnScan").onclick = openScan;
+$("#scNets").addEventListener("click", e => { const b = e.target.closest("button"); if (b){ $("#scRange").value = b.dataset.r; startScan(); } });
+$("#scForm").addEventListener("submit", e => { e.preventDefault(); if (scJob && scJob.status === "running") post("/api/scan/cancel", {id:scJob.id}); else startScan(); });
+$("#scGroup").addEventListener("input", () => scGroupEdited = true);
+async function startScan(){
+  const range = $("#scRange").value.trim(); if (!range) { $("#scRange").focus(); return; }
+  clearTimeout(scTimer); scSel = new Set(); scSig = "";
+  $("#scBody").innerHTML = ""; $("#scAll").checked = true;
+  try {
+    scJob = await post("/api/scan/start", {range});
+    if (!scGroupEdited) $("#scGroup").value = "Red " + scJob.label;
+    renderScan(); scTimer = setTimeout(pollScan, 400);
+  } catch(e){ scJob = null; $("#scStatus").innerHTML = '<span style="color:var(--bad)">⚠ ' + esc(e.message) + "</span>"; $("#scBar").style.width = "0"; }
+}
+async function pollScan(){
+  if (!scJob) return;
+  try { scJob = await api("GET", "/api/scan?id=" + scJob.id); } catch(e){ return; }
+  renderScan();
+  if (scJob.status === "running") scTimer = setTimeout(pollScan, $("#dlgScan").open ? 400 : 1500);
+}
+function scVisible(){
+  const f = $("#scFilter").value.trim().toLowerCase(); if (!f) return scJob.found;
+  const rg = parseRange(f);
+  return scJob.found.filter(h => rg ? (n => n >= rg[0] && n <= rg[1])(ip2n(h.ip)) : (h.ip + " " + (h.name||"") + " " + (h.mac||"")).toLowerCase().includes(f));
+}
+function renderScan(){
+  const j = scJob; if (!j) return;
+  // nuevas detectadas: seleccionadas por defecto si "Seleccionar todas" está marcado
+  for (const h of j.found) if (!scSeen.has(j.id + h.ip)){ scSeen.add(j.id + h.ip); if (!h.monitored && $("#scAll").checked) scSel.add(h.ip); }
+  for (const h of j.found) if (h.monitored) scSel.delete(h.ip);
+  const running = j.status === "running", pct = j.total ? Math.round(j.done / j.total * 100) : 0;
+  $("#scBar").style.width = pct + "%";
+  $("#scGo").textContent = running ? "Detener" : "Escanear"; $("#scGo").className = running ? "btn" : "btn primary";
+  const nuevas = j.found.filter(h => !h.monitored).length;
+  const head = `<b>${esc(j.label)}</b> · ${j.done} / ${j.total} · <b style="color:var(--ok)">${j.found.length} activas</b>` + (j.found.length ? ` (${nuevas} nuevas)` : "");
+  $("#scStatus").innerHTML = running ? '<span class="spin"></span><span>Escaneando ' + head + "</span>"
+    : j.status === "cancelled" ? "<span>Detenido · " + head + "</span>"
+    : j.status === "error" ? '<span style="color:var(--bad)">⚠ ' + esc(j.error) + "</span>"
+    : "<span>✔ Completado · " + head + "</span>";
+  const vis = scVisible();
+  const sig = j.id + j.found.length + "|" + vis.length + "|" + [...scSel].join(",") + "|" + j.found.filter(h => h.monitored).length;
+  if (sig !== scSig){
+    scSig = sig;
+    $("#scBody").innerHTML = vis.length ? vis.map(h => `<tr class="${h.monitored ? "dis" : ""}" data-ip="${esc(h.ip)}">
+      <td><input type="checkbox" ${scSel.has(h.ip) ? "checked" : ""} ${h.monitored ? "disabled" : ""}></td>
+      <td class="mono">${esc(h.ip)}</td><td>${esc(h.name || "")}</td><td class="mono" style="color:var(--muted);font-size:12px">${esc(h.mac || "")}</td>
+      <td class="t">${h.ms >= 0 ? (h.ms === 0 ? "<1" : h.ms) + " ms" : '<span class="star">—</span>'}</td>
+      <td>${h.monitored ? '<span class="tag mon">Ya en el monitor</span>' : '<span class="tag new">Nueva</span>'}${h.ms < 0 ? '<span class="tag arp" title="No responde a ping; detectada por ARP. En el monitor aparecerá como caída si bloquea el ping.">Sin ping</span>' : ""}</td></tr>`).join("")
+      : `<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">${running ? "Buscando equipos activos…" : j.found.length ? "Nada coincide con el filtro." : "No se detectaron IPs activas en este rango."}</td></tr>`;
+  }
+  const n = scSel.size;
+  $("#scAdd").disabled = n === 0;
+  $("#scAdd").textContent = "Añadir " + n + (n === 1 ? " IP" : " IPs") + " al monitor";
+}
+$("#scBody").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-ip]"); if (!tr || tr.classList.contains("dis")) return;
+  const ip = tr.dataset.ip; scSel.has(ip) ? scSel.delete(ip) : scSel.add(ip); renderScan();
+});
+$("#scAll").addEventListener("change", e => {
+  if (!scJob) return;
+  for (const h of scVisible()) if (!h.monitored) e.target.checked ? scSel.add(h.ip) : scSel.delete(h.ip);
+  renderScan();
+});
+$("#scFilter").addEventListener("input", renderScan);
+$("#scAdd").onclick = async () => {
+  if (!scJob || !scSel.size) return;
+  const items = scJob.found.filter(h => scSel.has(h.ip)).map(h => ({host:h.ip, name:h.name ? h.name.split(".")[0] : ""}));
+  const group = $("#scGroup").value.trim(), interval = parseFloat($("#scInterval").value) || 1;
+  try {
+    const r = await post("/api/targets/addmany", {items, group, interval});
+    toast("ok", r.added + (r.added === 1 ? " IP añadida" : " IPs añadidas") + " al monitor", (group ? "Grupo: " + group : "Sin grupo") + (r.skipped ? " · " + r.skipped + " ya estaban" : ""));
+    scSel.clear();
+    scJob = await api("GET", "/api/scan?id=" + scJob.id); scSig = ""; renderScan();
+  } catch(e){ toast("bad", "No se pudieron añadir", e.message); }
+};
+// si se cierra el diálogo con el escaneo en marcha, se sigue consultando más despacio
+$("#dlgScan").addEventListener("close", () => {
+  if (scJob && scJob.status === "running"){ clearTimeout(scTimer); scTimer = setTimeout(pollScan, 1500); }
+});
+
+// ------------------------------------------------------------ papelera
+async function openTrash(){ const d = $("#dlgTrash"); if (!d.open) d.showModal(); await renderTrash(); }
+async function renderTrash(){
+  const r = await api("GET", "/api/trash"), now = Date.now(), box = $("#trashList");
+  $("#trRestoreAll").disabled = $("#trEmpty").disabled = !r.items.length;
+  if (!r.items.length){ box.innerHTML = '<div class="trash-empty">La papelera está vacía.</div>'; return; }
+  box.innerHTML = r.items.map(x => {
+    const left = Math.max(0, Math.ceil((x.expiresAt - now) / 86400000));
+    return `<div class="ti" data-id="${esc(x.id)}">
+      <div class="who"><b>${esc(x.name || x.host)}</b><small>${esc(x.host)}${x.group ? " · " + esc(x.group) : ""}</small></div>
+      <div class="when ${left <= 3 ? "soon" : ""}">Eliminada ${esc(dayLabel(x.deletedAt).toLowerCase())} ${hms(x.deletedAt).slice(0,5)}<br>Se borra en ${left} día${left === 1 ? "" : "s"}</div>
+      <button class="btn sm" data-a="restore">Restaurar</button>
+      <button class="ibtn" style="width:30px;height:30px" data-a="purge" title="Borrar definitivamente">${ICON.del}</button></div>`;
+  }).join("");
+}
+async function restoreTrash(ids){
+  const r = await post("/api/trash/restore", ids ? {ids} : {all:true});
+  toast("ok", r.restored + (r.restored === 1 ? " IP restaurada" : " IPs restauradas"));
+  if ($("#dlgTrash").open) renderTrash();
+}
+$("#trashList").addEventListener("click", async e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const row = b.closest(".ti"), id = row.dataset.id, name = row.querySelector("b").textContent;
+  if (b.dataset.a === "restore") restoreTrash([id]);
+  else askConfirm({ title:"¿Borrar " + name + " definitivamente?", ok:"Borrar definitivamente",
+    html:"Esta acción <b>no se puede deshacer</b>.", onOk: async () => { await post("/api/trash/delete", {ids:[id]}); renderTrash(); } });
+});
+$("#trRestoreAll").onclick = () => restoreTrash(null);
+$("#trEmpty").onclick = () => askConfirm({ title:"¿Vaciar la papelera?", ok:"Vaciar papelera",
+  html:"Se borrarán definitivamente todas las IPs de la papelera.<br>Esta acción <b>no se puede deshacer</b>.",
+  onOk: async () => { const r = await post("/api/trash/delete", {all:true}); toast("", r.deleted + " IPs borradas definitivamente"); renderTrash(); } });
+
+// ------------------------------------------------------------ diálogo añadir/editar
+let editId = null, tMode = "one";
+function setTab(m){ tMode = m; $$("#tTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === m)); $("#tOne").style.display = m === "one" ? "" : "none"; $("#tMany").style.display = m === "many" ? "" : "none"; }
+$("#tTabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  setTab(b.dataset.t); $(b.dataset.t === "one" ? "#tHost" : "#tBulk").focus();
+});
+function openTarget(t){
+  editId = t ? t.id : null;
+  $("#tTitle").textContent = t ? "Editar " + title(t) : "Añadir IP";
+  $("#tTabs").style.display = t ? "none" : "";
+  setTab("one");
+  $("#tHost").value = t ? t.host : ""; $("#tName").value = t ? t.name : ""; $("#tGroup").value = t ? t.group : (S.lastGroup || "");
+  $("#tInterval").value = t ? t.interval/1000 : 1; $("#tBulk").value = ""; $("#tErr").textContent = "";
+  const groups = [...new Set(S.targets.map(x => x.group).filter(Boolean))];
+  $("#groupList").innerHTML = groups.map(g => `<option value="${esc(g)}">`).join("");
+  $("#dlgTarget").showModal(); setTimeout(() => $("#tHost").focus(), 30);
+}
+$("#fTarget").addEventListener("submit", async ev => {
+  ev.preventDefault(); $("#tErr").textContent = "";
+  const group = $("#tGroup").value.trim(), interval = parseFloat($("#tInterval").value) || 1;
+  try {
+    if (tMode === "many"){
+      const r = await post("/api/targets/bulk", {text:$("#tBulk").value, group, interval});
+      if (!r.added) { $("#tErr").textContent = "No se encontró ninguna IP válida."; return; }
+      toast("ok", r.added + (r.added === 1 ? " IP añadida" : " IPs añadidas"));
+    } else {
+      const host = $("#tHost").value.trim();
+      if (!host){ $("#tErr").textContent = "Indica una IP o un nombre de host."; $("#tHost").focus(); return; }
+      await post("/api/targets/save", {id:editId, host, name:$("#tName").value.trim(), group, interval});
+      if (!editId) toast("ok", ($("#tName").value.trim() || host) + " añadida", "Monitoreando cada " + interval + " s");
+    }
+    S.lastGroup = group;
+    $("#dlgTarget").close();
+  } catch(e){ $("#tErr").textContent = e.message; }
+});
+$("#btnAdd").onclick = () => openTarget(null);
+$("#btnAdd2").onclick = () => openTarget(null);
+
+// ------------------------------------------------------------ detalle
+function openDetail(id){ S.detailId = id; const d = $("#dlgDetail"); if (!d.open) d.showModal(); renderDetail(); }
+$("#dlgDetail").addEventListener("close", () => { S.detailId = null; });
+$("#dRange").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.range = +b.dataset.r; $$("#dRange button").forEach(x => x.classList.toggle("on", x === b)); renderDetail(); });
+let dGeom = null;
+function renderDetail(){
+  const t = S.byId[S.detailId]; if (!t){ $("#dlgDetail").close(); return; }
+  const c = cls(t), now = Date.now();
+  $("#dDot").style.cssText = "margin-top:0;--c:" + colorFor(c) + ";--cs:" + alpha(colorFor(c), .15);
+  $("#dTitle").textContent = title(t); $("#dHost").textContent = t.host;
+  $("#dGroup").innerHTML = (t.group ? `<span class="chip">${esc(t.group)}</span>` : "")
+    + (t.consec > 0 && t.error ? ` <span style="color:var(--bad);font-family:var(--sans)">Último error: ${esc(t.error)}</span>` : "");
+  $("#dPause").innerHTML = t.paused ? ICON.play + " Reanudar" : ICON.pause + " Pausar";
+  const st = [["Estado", t.state === "up" ? "En línea" : t.state === "down" ? "Caída" : t.state === "paused" ? "Pausada" : "…", colorFor(c)],
+    ["Desde", t.state === "paused" ? "—" : fmtDur(now - t.since)], ["Actual", t.last >= 0 ? fmtMs(t.last) + " ms" : "—"],
+    ["Mín / Máx", fmtMs(t.min) + " / " + fmtMs(t.max)], ["Promedio", fmtMs(t.avg) + (t.avg >= 0 ? " ms" : "")], ["Jitter", t.avg >= 0 ? fmtMs(t.jitter) + " ms" : "—"],
+    ["Pérdida", t.loss + "%", t.loss >= 10 ? C.bad : t.loss > 0 ? C.warn : ""], ["Enviados / Recib.", t.sent + " / " + t.recv]];
+  $("#dStats").innerHTML = st.map(([l, v, col]) => `<div class="d-stat"><label>${l}</label><b style="${col ? "color:" + col : ""}">${esc(v)}</b></div>`).join("");
+  dGeom = drawChart($("#dCanvas"), S.buf[t.id] || [], {win:S.range, axes:true, color:colorFor(c) === C.dim ? C.accent : colorFor(c), high:S.settings.highLatencyMs, interval:t.interval/1000});
+  // consola estilo ping -t
+  const con = $("#dConsole"), atBottom = con.scrollTop + con.clientHeight >= con.scrollHeight - 8;
+  const last = (S.buf[t.id] || []).slice(-120);
+  con.innerHTML = last.map(s => s[2] >= 0
+    ? `<span class="${s[2] >= S.settings.highLatencyMs ? "hi" : ""}">[${hms(s[1])}] Respuesta desde ${esc(t.host)}: bytes=32 tiempo${s[2] === 0 ? "<1" : "="+s[2]}ms TTL=${s[3]}</span>`
+    : `<span class="to">[${hms(s[1])}] Tiempo de espera agotado para esta solicitud.</span>`).join("\n");
+  if (atBottom) con.scrollTop = con.scrollHeight;
+}
+$("#dCanvas").addEventListener("mousemove", e => {
+  const tip = $("#dTip"); if (!dGeom || !dGeom.pts.length){ tip.style.display = "none"; return; }
+  const r = e.target.getBoundingClientRect(), x = e.clientX - r.left;
+  let best = null, bd = 1e9; for (const s of dGeom.pts){ const d = Math.abs(dGeom.X(s[1]) - x); if (d < bd){ bd = d; best = s; } }
+  if (!best || bd > 20){ tip.style.display = "none"; return; }
+  tip.style.display = "block"; tip.innerHTML = hms(best[1]) + " · <b>" + (best[2] >= 0 ? fmtMs(best[2]) + " ms" : "sin respuesta") + "</b>";
+  const px = dGeom.X(best[1]) + 10; tip.style.left = Math.min(px, r.width - tip.offsetWidth) + "px"; tip.style.top = "40px";
+});
+$("#dCanvas").addEventListener("mouseleave", () => $("#dTip").style.display = "none");
+$("#dPause").onclick = async () => { const t = S.byId[S.detailId]; if (t) await post("/api/targets/pause", {id:t.id, paused:!t.paused}); };
+$("#dTrace").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTrace(t.host, true); } };
+$("#dEdit").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTarget(t); } };
+$("#dReset").onclick = async () => { const t = S.byId[S.detailId]; if (t){ await post("/api/targets/reset", {id:t.id}); toast("", "Estadísticas reiniciadas", title(t)); } };
+
+// ------------------------------------------------------------ tracert
+let trJob = null, trTimer = null;
+function openTrace(host, autostart){
+  const d = $("#dlgTrace"); if (!d.open) d.showModal();
+  $("#hostList").innerHTML = S.targets.map(t => `<option value="${esc(t.host)}">${esc(t.name)}</option>`).join("");
+  if (host != null) $("#trHost").value = host;
+  if (autostart && host) startTrace(); else setTimeout(() => $("#trHost").focus(), 30);
+}
+$("#btnTrace").onclick = () => openTrace(null, false);
+$("#trForm").addEventListener("submit", e => { e.preventDefault(); if (trJob && trJob.status === "running") cancelTrace(); else startTrace(); });
+async function startTrace(){
+  const host = $("#trHost").value.trim(); if (!host) return;
+  clearTimeout(trTimer);
+  $("#trBody").innerHTML = ""; setTrStatus(true, "Iniciando traza a " + host + "…");
+  try { trJob = await post("/api/trace/start", {host, resolve:$("#trResolve").checked}); renderTrace(); trTimer = setTimeout(pollTrace, 300); }
+  catch(e){ setTrStatus(false, e.message); }
+}
+async function cancelTrace(){ if (trJob) await post("/api/trace/cancel", {id:trJob.id}).catch(()=>{}); }
+async function pollTrace(){
+  if (!trJob) return;
+  try { trJob = await api("GET", "/api/trace?id=" + trJob.id); renderTrace(); } catch(e){ setTrStatus(false, e.message); return; }
+  if (trJob.status === "running" && $("#dlgTrace").open) trTimer = setTimeout(pollTrace, 350);
+  else if (trJob.status === "running") cancelTrace();
+}
+$("#dlgTrace").addEventListener("close", () => { if (trJob && trJob.status === "running") cancelTrace(); clearTimeout(trTimer); });
+function setTrStatus(spin, txt){ $("#trStatus").innerHTML = (spin ? '<span class="spin"></span>' : "") + "<span>" + txt + "</span>"; }
+function renderTrace(){
+  const j = trJob, running = j.status === "running";
+  $("#trGo").textContent = running ? "Detener" : "Iniciar";
+  $("#trGo").className = running ? "btn" : "btn primary";
+  const dest = esc(j.host) + (j.ip && j.ip !== j.host ? " [" + esc(j.ip) + "]" : "");
+  if (running) setTrStatus(true, "Trazando ruta a " + dest + " · salto " + j.hops.length + " de máx. 30");
+  else if (j.status === "done") setTrStatus(false, j.error ? "⚠ " + esc(j.error) : "✔ Traza completa a " + dest + " en " + j.hops.length + " saltos");
+  else if (j.status === "cancelled") setTrStatus(false, "Traza detenida.");
+  else setTrStatus(false, "⚠ " + esc(j.error || "Error"));
+  const maxT = Math.max(10, ...j.hops.flatMap(h => h.times).filter(x => x >= 0));
+  $("#trBody").innerHTML = j.hops.map((h, i) => {
+    const fin = !running && j.status === "done" && !j.error && i === j.hops.length - 1;
+    const tcell = v => v === -2 ? '<td class="t"><span class="star">…</span></td>' : v < 0 ? '<td class="t"><span class="star">*</span></td>'
+      : `<td class="t">${v === 0 ? "<1" : v} ms<div class="bar" style="width:${Math.max(4, v/maxT*100)}%;margin-left:auto;background:${v >= S.settings.highLatencyMs ? C.warn : C.accent}"></div></td>`;
+    return `<tr class="${fin ? "final" : ""}"><td class="n">${h.n}</td><td class="mono">${h.ip ? esc(h.ip) : '<span class="star">Tiempo de espera agotado</span>'}</td><td style="color:var(--muted)">${esc(h.name || "")}</td>${h.times.map(tcell).join("")}</tr>`;
+  }).join("");
+  const wrap = $("#trBody").closest(".tbl-wrap"); wrap.scrollTop = wrap.scrollHeight;
+}
+$("#trCopy").onclick = async () => {
+  if (!trJob) return;
+  const lines = ["Traza a " + trJob.host + (trJob.ip ? " [" + trJob.ip + "]" : ""), ""];
+  for (const h of trJob.hops) lines.push(String(h.n).padStart(3) + "  " + h.times.map(v => (v < 0 ? "*" : (v === 0 ? "<1" : v) + " ms").padStart(7)).join(" ") + "  " + (h.ip ? (h.name ? h.name + " [" + h.ip + "]" : h.ip) : "Tiempo de espera agotado para esta solicitud."));
+  try { await navigator.clipboard.writeText(lines.join("\r\n")); toast("ok", "Traza copiada al portapapeles"); } catch(e){ toast("bad", "No se pudo copiar"); }
+};
+
+// ------------------------------------------------------------ ajustes
+function openSettings(){
+  const s = S.settings;
+  $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
+  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version;
+  $("#dlgSettings").showModal();
+}
+$("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notification" in window && Notification.permission === "default") Notification.requestPermission(); });
+$("#sTest").onclick = () => { const was = S.settings.sound; S.settings.sound = true; beep("down"); S.settings.sound = was; toast("bad", "Ejemplo: Router sede sin respuesta", "10.0.0.1 · Tiempo de espera agotado"); };
+$("#fSettings").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, sound:$("#sSound").checked, notify:$("#sNotify").checked});
+  applySettingsUI(); $("#dlgSettings").close(); toast("ok", "Ajustes guardados"); render();
+});
+
+// ------------------------------------------------------------ menú
+const menu = $("#menu");
+$("#btnMenu").onclick = e => { e.stopPropagation(); menu.classList.toggle("open"); };
+document.addEventListener("click", e => { if (!menu.contains(e.target)) menu.classList.remove("open"); });
+menu.addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return; menu.classList.remove("open");
+  const a = b.dataset.act;
+  try {
+    if (a.startsWith("exp-")) { const r = await post("/api/export", {kind:a.slice(4)}); toast("ok", "Archivo exportado", r.path, 8000); }
+    if (a === "open-logs") await post("/api/open", {kind:"logs"});
+    if (a === "pause-all") await post("/api/targets/pauseall", {paused:true});
+    if (a === "resume-all") await post("/api/targets/pauseall", {paused:false});
+    if (a === "trash") openTrash();
+    if (a === "clear-all") confirmClearAll();
+    if (a === "settings") openSettings();
+    if (a === "quit") { await post("/api/quit"); document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:var(--muted)">Monitor cerrado. Ya puedes cerrar esta ventana.</div>'; setTimeout(() => window.close(), 400); }
+  } catch(err){ toast("bad", "Error", err.message); }
+});
+
+// ------------------------------------------------------------ filtros, atajos, varios
+function setFilter(v){ S.filter = v.trim(); S.filterRange = S.filter ? parseRange(S.filter) : null; render(); }
+$("#q").addEventListener("input", e => setFilter(e.target.value));
+$$(".pill").forEach(p => p.addEventListener("click", () => {
+  const f = p.dataset.f || null;
+  S.stateFilter = f && S.stateFilter !== f ? f : null;
+  $$(".pill").forEach(x => x.classList.toggle("sel", (x.dataset.f || null) === S.stateFilter));
+  render();
+}));
+$$("[data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
+$$("dialog").forEach(d => d.addEventListener("mousedown", e => { if (e.target === d) d.close(); }));
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f"){ e.preventDefault(); $("#q").focus(); $("#q").select(); }
+  else if (e.key === "Escape" && document.activeElement === $("#q")){ $("#q").value = ""; setFilter(""); $("#q").blur(); }
+  else if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === "n" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !document.querySelector("dialog[open]")){ e.preventDefault(); openTarget(null); }
+});
+window.addEventListener("resize", () => { if (S.loaded) render(); });
+window.addEventListener("pagehide", () => { try { navigator.sendBeacon("/api/bye?token=" + TOKEN, new Blob(["{}"], {type:"application/json"})); } catch(e){} });
+setInterval(() => { const d = new Date(); $("#clock").textContent = d.toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"}) + " · " + hms(d); }, 1000);
+document.addEventListener("click", () => { if (actx && actx.state === "suspended") actx.resume(); }, {passive:true});
+
+applyTheme("dark"); poll();
+</script>
+</body>
+</html>
