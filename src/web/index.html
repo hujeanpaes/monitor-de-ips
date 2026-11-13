@@ -233,6 +233,20 @@ textarea.inp{height:150px;padding:10px 12px;resize:vertical;font-family:var(--mo
 .d-stat{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
 .d-stat label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:650}
 .d-stat b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+/* tipo de comprobación (ping / TCP / web) */
+.seg.t-kind{display:flex;width:100%}
+.seg.t-kind button{flex:1;padding:7px 8px}
+.row3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
+.ports{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px;min-height:0}
+.ports .p{border:1px solid var(--border);background:var(--bg2);border-radius:999px;padding:4px 11px;font-size:12.5px;cursor:pointer;font-family:var(--mono)}
+.ports .p small{font-family:var(--sans);color:var(--muted);margin-left:5px}
+.ports .p.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ports .note{font-size:12.5px;color:var(--muted)}
+details.adv{border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:13px;background:var(--bg2)}
+details.adv summary{cursor:pointer;font-size:12.5px;color:var(--muted);font-weight:600;user-select:none}
+details.adv[open] summary{margin-bottom:10px}
+.kind-ic{display:inline-flex;vertical-align:-2px;margin-right:6px;color:var(--accent);opacity:.9}
+.c-cert{color:var(--warn);font-weight:600}
 /* historial y disponibilidad */
 .h-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
 .h-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
@@ -326,6 +340,8 @@ tr.final td{background:var(--ok-soft)}
   aside.events{width:min(340px,100%)}
   .d-stats{grid-template-columns:repeat(2,1fr)}
   .h-kpis{grid-template-columns:repeat(2,1fr)}
+  .row3{grid-template-columns:1fr 1fr}
+  .row3 > .field:first-child{grid-column:1 / -1}
   .a-tbl th:nth-child(2),.a-tbl td:nth-child(2),.a-tbl th:nth-child(5),.a-tbl td:nth-child(5),.a-tbl th:nth-child(6),.a-tbl td:nth-child(6){display:none}
   .a-tbl th[data-k="availability"]{width:auto !important}
   .a-bar .tr{min-width:36px} .a-bar b{min-width:0}
@@ -418,15 +434,36 @@ tr.final td{background:var(--ok-soft)}
     <div class="dlg-b">
       <div class="tabs" id="tTabs"><button type="button" data-t="one" class="on">Una IP</button><button type="button" data-t="many">Varias a la vez</button></div>
       <div id="tOne">
-        <div class="field"><label>IP o nombre de host</label><input class="inp" id="tHost" placeholder="10.64.12.1" style="font-family:var(--mono)" autocomplete="off"></div>
+        <div class="field"><label>Tipo de comprobación</label>
+          <div class="seg t-kind" id="tKind"><button type="button" data-k="ping" class="on">Ping</button><button type="button" data-k="tcp">Puerto TCP</button><button type="button" data-k="http">Web</button></div>
+          <span class="hint" id="tKindHint"></span></div>
+        <div class="field" id="fHost"><label>IP o nombre de host</label><input class="inp" id="tHost" placeholder="10.64.12.1" style="font-family:var(--mono)" autocomplete="off"></div>
+        <div id="fTcp" style="display:none">
+          <div class="row2">
+            <div class="field"><label>Puerto</label><input class="inp" id="tPort" type="number" min="1" max="65535" list="portList" placeholder="3389" style="font-family:var(--mono)"><datalist id="portList"></datalist></div>
+            <div class="field"><label>&nbsp;</label><button type="button" class="btn" id="tDetect" title="Prueba los puertos más comunes del equipo">Detectar puertos abiertos</button></div>
+          </div>
+          <div class="ports" id="tPorts"></div>
+        </div>
+        <div id="fHttp" style="display:none">
+          <div class="field"><label>URL</label><input class="inp" id="tUrl" placeholder="https://intranet.empresa.local/" style="font-family:var(--mono)" autocomplete="off"></div>
+          <details class="adv" id="tAdv"><summary>Opciones avanzadas</summary>
+            <div class="row2">
+              <div class="field"><label>Códigos válidos</label><input class="inp" id="tExpect" placeholder="200-399" autocomplete="off"><span class="hint">Ej.: 200-399 · 200,301 · 2xx</span></div>
+              <div class="field"><label>Texto que debe aparecer</label><input class="inp" id="tKeyword" placeholder="(opcional)" autocomplete="off"></div>
+            </div>
+            <label class="sc-check"><input type="checkbox" id="tInsecure" checked> Aceptar certificados no válidos (equipos internos con certificado propio)</label>
+          </details>
+        </div>
         <div class="field"><label>Nombre (opcional)</label><input class="inp" id="tName" placeholder="Router sede central" autocomplete="off"></div>
       </div>
       <div id="tMany" style="display:none">
-        <div class="field"><label>Una por línea</label><textarea class="inp" id="tBulk" placeholder="10.64.12.1 Router sede&#10;Switch planta 2;172.17.16.205&#10;10.225.146.130"></textarea><span class="hint">Formato libre: "IP nombre", "nombre;IP" o sólo la IP. También puedes pegar líneas de ping.</span></div>
+        <div class="field"><label>Una por línea</label><textarea class="inp" id="tBulk" placeholder="10.64.12.1 Router sede&#10;Switch planta 2;172.17.16.205&#10;10.225.146.130"></textarea><span class="hint">Formato libre: "IP nombre", "nombre;IP" o sólo la IP. Puertos: "10.0.0.5:3389 Servidor". Webs: "https://intranet/ Intranet". También puedes pegar líneas de ping.</span></div>
       </div>
-      <div class="row2">
+      <div class="row3">
         <div class="field"><label>Grupo</label><input class="inp" id="tGroup" list="groupList" placeholder="Sin grupo" autocomplete="off"><datalist id="groupList"></datalist></div>
-        <div class="field"><label>Intervalo (segundos)</label><input class="inp" id="tInterval" type="number" min="0.25" step="0.25" value="1"></div>
+        <div class="field"><label>Intervalo (s)</label><input class="inp" id="tInterval" type="number" min="0.25" step="0.25" value="1"></div>
+        <div class="field"><label>Espera máx. (s)</label><input class="inp" id="tTimeout" type="number" min="0.2" step="0.1" placeholder="auto" title="Vacío = automático (ping: ajuste general · TCP: 3 s · web: 10 s)"></div>
       </div>
       <div class="err" id="tErr"></div>
     </div>
@@ -440,6 +477,7 @@ tr.final td{background:var(--ok-soft)}
     <span class="dot" id="dDot" style="margin-top:0"></span>
     <div style="flex:1;min-width:0"><h3 id="dTitle">—</h3><div class="d-sub"><span id="dHost"></span><span id="dGroup"></span></div></div>
     <button class="btn sm" id="dPause"></button>
+    <button class="btn sm" id="dAddSvc" title="Vigilar un puerto o una web de este mismo equipo">+ Servicio</button>
     <button class="btn sm" id="dTrace">Tracert</button>
     <button class="btn sm" id="dEdit">Editar</button>
     <button class="btn sm ghost" id="dReset" title="Reiniciar estadísticas">Reiniciar</button>
@@ -734,7 +772,7 @@ function matches(t){
   const rg = S.filterRange;
   if (rg){ const n = ip2n(t.host); return n != null && n >= rg[0] && n <= rg[1]; }
   const f = S.filter.toLowerCase();
-  return (t.name+" "+t.host+" "+t.group).toLowerCase().includes(f);
+  return (t.name+" "+t.host+" "+t.group+" "+t.label+" "+(t.port || "")+" "+(t.url || "")).toLowerCase().includes(f);
 }
 
 function render(){
@@ -763,13 +801,15 @@ function render(){
     const k = S.cards[t.id]; if (!k) continue;
     const c = cls(t);
     if (k.c !== c){ k.el.classList.remove(k.c || "x"); k.el.classList.add(c); k.c = c; }
-    k.name.textContent = title(t);
-    k.host.textContent = t.name ? t.host : "ping cada " + (t.interval/1000) + " s";
-    if (t.state === "down") { k.lat.className = "c-lat down"; k.lat.textContent = "SIN RESPUESTA"; }
+    k.name.innerHTML = (KIND_IC[t.check] || "") + esc(title(t));
+    k.host.textContent = subLine(t);
+    if (t.state === "down") { k.lat.className = "c-lat down"; k.lat.textContent = t.short || "SIN RESPUESTA"; }
     else if (t.state === "paused" || t.last < 0) { k.lat.className = "c-lat"; k.lat.innerHTML = "—"; }
     else { k.lat.className = "c-lat"; k.lat.innerHTML = fmtMs(t.last) + '<span class="u">ms</span>'; }
     k.state.innerHTML = stateText(t, now);
     k.state.title = t.consec > 0 && t.error ? "Último error: " + t.error : "";
+    if (t.certDays != null && t.certDays <= 14 && t.state !== "down")
+      k.state.innerHTML += ` · <span class="c-cert" title="${esc(t.certSubject || "")}">${t.certDays < 0 ? "certificado caducado" : "cert. caduca en " + t.certDays + " d"}</span>`;
     k.pause.innerHTML = t.paused ? ICON.play : ICON.pause;
     k.min.textContent = fmtMs(t.min); k.avg.textContent = fmtMs(t.avg); k.max.textContent = fmtMs(t.max);
     k.loss.textContent = t.window ? t.loss + "%" : "—";
@@ -900,6 +940,7 @@ function renderEvents(){
       case "removed": txt = `<b>${n}</b> movida a la papelera`; break;
       case "restored": txt = `<b>${n}</b> restaurada`; break;
       case "cleared": txt = `<b>Se eliminaron todas las IPs</b>`; break;
+      case "cert": txt = `<b>${n}</b> · ${esc(e.detail || "certificado por caducar")}`; break;
       case "scan": txt = `<b>${n}</b>`; break;
       case "paused": txt = `<b>${n}</b> pausada`; break;
       case "resumed": txt = `<b>${n}</b> reanudada`; break;
@@ -1104,40 +1145,147 @@ $("#trEmpty").onclick = () => askConfirm({ title:"¿Vaciar la papelera?", ok:"Va
   onOk: async () => { const r = await post("/api/trash/delete", {all:true}); toast("", r.deleted + " IPs borradas definitivamente"); renderTrash(); } });
 
 // ------------------------------------------------------------ diálogo añadir/editar
-let editId = null, tMode = "one";
+// ------------------------------------------------------------ tipos de comprobación (ping / TCP / web)
+const KIND_IC = {
+  tcp:'<span class="kind-ic" title="Puerto TCP"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span>',
+  http:'<span class="kind-ic" title="Web"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>',
+};
+const PORTS = {21:"FTP",22:"SSH",23:"Telnet",25:"SMTP",53:"DNS",80:"HTTP",110:"POP3",135:"RPC",139:"NetBIOS",143:"IMAP",443:"HTTPS",445:"SMB",1433:"SQL Server",3306:"MySQL",3389:"Escritorio remoto",5432:"PostgreSQL",5900:"VNC",8080:"HTTP alternativo",8443:"HTTPS alternativo",9100:"Impresora"};
+const shortUrl = u => String(u || "").replace(/^https?:\/\//i, "").replace(/\/$/, "");
+/** Subtítulo de la tarjeta según el tipo. */
+function subLine(t){
+  const every = "cada " + (t.interval / 1000) + " s";
+  if (t.check === "http") return t.name ? shortUrl(t.url) : t.label + " · " + every;
+  if (t.check === "tcp") return t.name ? t.host + " · " + t.label : t.label + " · " + every;
+  return t.name ? t.host : "ping " + every;
+}
+/** Línea de la consola del detalle según el tipo. s = [seq, t, ms, ttl|código] */
+function consoleLine(t, s){
+  const ts = "[" + hms(s[1]) + "] ", hi = s[2] >= S.settings.highLatencyMs ? "hi" : "";
+  if (t.check === "tcp")
+    return s[2] >= 0 ? `<span class="${hi}">${ts}Conexión a ${esc(t.host)}:${t.port} correcta: ${s[2] === 0 ? "<1" : s[2]} ms</span>`
+                     : `<span class="to">${ts}Sin conexión con ${esc(t.host)}:${t.port}</span>`;
+  if (t.check === "http")
+    return s[2] >= 0 ? `<span class="${hi}">${ts}HTTP ${s[3]} en ${s[2]} ms</span>`
+                     : `<span class="to">${ts}${s[3] > 0 ? "HTTP " + s[3] + " (no válido)" : "Sin respuesta de " + esc(shortUrl(t.url))}</span>`;
+  return s[2] >= 0 ? `<span class="${hi}">${ts}Respuesta desde ${esc(t.host)}: bytes=32 tiempo${s[2] === 0 ? "<1" : "=" + s[2]}ms TTL=${s[3]}</span>`
+                   : `<span class="to">${ts}Tiempo de espera agotado para esta solicitud.</span>`;
+}
+
+// ------------------------------------------------------------ diálogo añadir / editar
+let editId = null, tMode = "one", tKind = "ping", tIntervalTouched = false, tPicked = new Set();
+const KIND_HINT = {
+  ping: "Comprueba que el equipo responde al ping.",
+  tcp: "Comprueba que un servicio acepta conexiones en su puerto (escritorio remoto, base de datos, impresora…).",
+  http: "Comprueba que una página web responde con un código válido y, si quieres, que contiene un texto.",
+};
+const KIND_INTERVAL = {ping: 1, tcp: 10, http: 30};
+$("#portList").innerHTML = Object.entries(PORTS).map(([p, n]) => `<option value="${p}">${n}</option>`).join("");
+
 function setTab(m){ tMode = m; $$("#tTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === m)); $("#tOne").style.display = m === "one" ? "" : "none"; $("#tMany").style.display = m === "many" ? "" : "none"; }
 $("#tTabs").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  setTab(b.dataset.t); $(b.dataset.t === "one" ? "#tHost" : "#tBulk").focus();
+  setTab(b.dataset.t); $(b.dataset.t === "one" ? (tKind === "http" ? "#tUrl" : "#tHost") : "#tBulk").focus();
 });
-function openTarget(t){
+function setKind(k){
+  tKind = k;
+  $$("#tKind button").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+  $("#tKindHint").textContent = KIND_HINT[k];
+  $("#fHost").style.display = k === "http" ? "none" : "";
+  $("#fTcp").style.display = k === "tcp" ? "" : "none";
+  $("#fHttp").style.display = k === "http" ? "" : "none";
+  if (!tIntervalTouched) $("#tInterval").value = KIND_INTERVAL[k];
+  $("#tInterval").min = k === "http" ? 5 : k === "tcp" ? 2 : 0.25;
+}
+$("#tKind").addEventListener("click", e => { const b = e.target.closest("button"); if (b){ setKind(b.dataset.k); $(b.dataset.k === "http" ? "#tUrl" : b.dataset.k === "tcp" && $("#tHost").value ? "#tPort" : "#tHost").focus(); } });
+$("#tInterval").addEventListener("input", () => tIntervalTouched = true);
+$("#tPort").addEventListener("input", () => { tPicked.clear(); $$("#tPorts .p").forEach(p => p.classList.remove("on")); });
+
+// detectar puertos abiertos: un clic elige el puerto; varios clics eligen varios (se crea una tarjeta por puerto)
+$("#tDetect").onclick = async () => {
+  const host = $("#tHost").value.trim();
+  if (!host){ $("#tErr").textContent = "Indica primero la IP o el nombre del equipo."; $("#tHost").focus(); return; }
+  $("#tErr").textContent = ""; tPicked.clear();
+  $("#tPorts").innerHTML = '<span class="note"><span class="spin" style="display:inline-block;vertical-align:-2px;margin-right:6px"></span>Probando puertos comunes…</span>';
+  $("#tDetect").disabled = true;
+  try {
+    const r = await post("/api/ports/detect", {host});
+    $("#tPorts").innerHTML = r.open.length
+      ? r.open.map(o => `<button type="button" class="p" data-p="${o.port}">${o.port}<small>${esc(PORTS[o.port] || o.name || "")} · ${o.ms} ms</small></button>`).join("") + `<span class="note">Pulsa uno o varios.</span>`
+      : `<span class="note">Ninguno de los ${r.tested} puertos comunes está abierto en ${esc(host)}. Puedes escribir otro puerto a mano.</span>`;
+  } catch(e){ $("#tPorts").innerHTML = ""; $("#tErr").textContent = e.message; }
+  $("#tDetect").disabled = false;
+};
+$("#tPorts").addEventListener("click", e => {
+  const b = e.target.closest(".p"); if (!b) return;
+  const p = +b.dataset.p;
+  tPicked.has(p) ? tPicked.delete(p) : tPicked.add(p);
+  b.classList.toggle("on", tPicked.has(p));
+  const list = [...tPicked];
+  $("#tPort").value = list.length === 1 ? list[0] : "";
+  $("#tPort").placeholder = list.length > 1 ? list.length + " puertos elegidos" : "3389";
+});
+
+/** t = comprobación a editar; preset = valores iniciales para una nueva ({check, host, name, group}). */
+function openTarget(t, preset){
+  const p = t || preset || {};
   editId = t ? t.id : null;
-  $("#tTitle").textContent = t ? "Editar " + title(t) : "Añadir IP";
+  $("#tTitle").textContent = t ? "Editar " + title(t) : "Añadir al monitor";
   $("#tTabs").style.display = t ? "none" : "";
   setTab("one");
-  $("#tHost").value = t ? t.host : ""; $("#tName").value = t ? t.name : ""; $("#tGroup").value = t ? t.group : (S.lastGroup || "");
-  $("#tInterval").value = t ? t.interval/1000 : 1; $("#tBulk").value = ""; $("#tErr").textContent = "";
-  const groups = [...new Set(S.targets.map(x => x.group).filter(Boolean))];
-  $("#groupList").innerHTML = groups.map(g => `<option value="${esc(g)}">`).join("");
-  $("#dlgTarget").showModal(); setTimeout(() => $("#tHost").focus(), 30);
+  tIntervalTouched = !!t; tPicked.clear();
+  $("#tHost").value = p.check === "http" ? "" : (p.host || "");
+  $("#tName").value = p.name || ""; $("#tGroup").value = p.group != null ? p.group : (S.lastGroup || "");
+  $("#tPort").value = p.port || ""; $("#tPort").placeholder = "3389"; $("#tPorts").innerHTML = "";
+  $("#tUrl").value = p.url || ""; $("#tExpect").value = p.expect && p.expect !== "200-399" ? p.expect : ""; $("#tKeyword").value = p.keyword || "";
+  $("#tInsecure").checked = p.insecure !== false;
+  $("#tAdv").open = !!(p.keyword || (p.expect && p.expect !== "200-399") || p.insecure === false);
+  $("#tTimeout").value = p.timeoutMs ? p.timeoutMs / 1000 : "";
+  $("#tBulk").value = ""; $("#tErr").textContent = "";
+  setKind(p.check || "ping");
+  if (t) $("#tInterval").value = t.interval / 1000;
+  $("#groupList").innerHTML = [...new Set(S.targets.map(x => x.group).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("");
+  $("#dlgTarget").showModal();
+  setTimeout(() => $(tKind === "http" ? "#tUrl" : tKind === "tcp" && $("#tHost").value ? "#tPort" : "#tHost").focus(), 30);
 }
+
 $("#fTarget").addEventListener("submit", async ev => {
   ev.preventDefault(); $("#tErr").textContent = "";
-  const group = $("#tGroup").value.trim(), interval = parseFloat($("#tInterval").value) || 1;
+  const group = $("#tGroup").value.trim(), interval = parseFloat($("#tInterval").value) || KIND_INTERVAL[tKind];
+  const timeoutMs = Math.round((parseFloat($("#tTimeout").value) || 0) * 1000);
+  const name = $("#tName").value.trim(), host = $("#tHost").value.trim();
+  const err = (msg, sel) => { $("#tErr").textContent = msg; if (sel) $(sel).focus(); };
   try {
     if (tMode === "many"){
       const r = await post("/api/targets/bulk", {text:$("#tBulk").value, group, interval});
-      if (!r.added) { $("#tErr").textContent = "No se encontró ninguna IP válida."; return; }
-      toast("ok", r.added + (r.added === 1 ? " IP añadida" : " IPs añadidas"));
+      if (!r.added) return err("No se encontró nada nuevo que añadir (o ya estaba en el monitor).");
+      toast("ok", r.added + (r.added === 1 ? " comprobación añadida" : " comprobaciones añadidas"));
+    } else if (tKind === "tcp" && tPicked.size > 1 && !editId){
+      // varios puertos elegidos en la detección: una tarjeta por puerto
+      const text = [...tPicked].map(p => host + ":" + p + " " + (name ? name + " · " : "") + (PORTS[p] || "TCP " + p)).join("\n");
+      const r = await post("/api/targets/bulk", {text, group, interval});
+      toast("ok", r.added + " puertos añadidos", host + (r.added < tPicked.size ? " · " + (tPicked.size - r.added) + " ya estaban" : ""));
     } else {
-      const host = $("#tHost").value.trim();
-      if (!host){ $("#tErr").textContent = "Indica una IP o un nombre de host."; $("#tHost").focus(); return; }
-      await post("/api/targets/save", {id:editId, host, name:$("#tName").value.trim(), group, interval});
-      if (!editId) toast("ok", ($("#tName").value.trim() || host) + " añadida", "Monitoreando cada " + interval + " s");
+      const body = {id:editId, name, group, interval, check:tKind, timeoutMs};
+      if (tKind === "http"){
+        const url = $("#tUrl").value.trim();
+        if (!url) return err("Indica la URL, por ejemplo https://intranet/.", "#tUrl");
+        Object.assign(body, {url, expect:$("#tExpect").value.trim() || "200-399", keyword:$("#tKeyword").value.trim(), insecure:$("#tInsecure").checked});
+      } else {
+        if (!host) return err("Indica una IP o un nombre de host.", "#tHost");
+        body.host = host;
+        if (tKind === "tcp"){
+          const port = parseInt($("#tPort").value, 10);
+          if (!(port >= 1 && port <= 65535)) return err("Indica un puerto entre 1 y 65535 (o usa \"Detectar puertos abiertos\").", "#tPort");
+          body.port = port;
+        }
+      }
+      const saved = await post("/api/targets/save", body);
+      if (!editId) toast("ok", (name || (tKind === "http" ? shortUrl(saved.Url) : host)) + " añadida", (tKind === "ping" ? "Ping" : tKind === "tcp" ? "Puerto " + body.port : "Web") + " · cada " + saved.IntervalMs / 1000 + " s");
     }
     S.lastGroup = group;
     $("#dlgTarget").close();
-  } catch(e){ $("#tErr").textContent = e.message; }
+  } catch(e){ err(e.message); }
 });
 $("#btnAdd").onclick = () => openTarget(null);
 $("#btnAdd2").onclick = () => openTarget(null);
@@ -1151,7 +1299,8 @@ function renderDetail(){
   const t = S.byId[S.detailId]; if (!t){ $("#dlgDetail").close(); return; }
   const c = cls(t), now = Date.now();
   $("#dDot").style.cssText = "margin-top:0;--c:" + colorFor(c) + ";--cs:" + alpha(colorFor(c), .15);
-  $("#dTitle").textContent = title(t); $("#dHost").textContent = t.host;
+  $("#dTitle").textContent = title(t); $("#dHost").textContent = t.check === "http" ? t.url : t.check === "tcp" ? t.host + " · " + t.label : t.host;
+  $("#dAddSvc").style.display = t.check === "ping" ? "" : "none";
   $("#dGroup").innerHTML = (t.group ? `<span class="chip">${esc(t.group)}</span>` : "")
     + (t.consec > 0 && t.error ? ` <span style="color:var(--bad);font-family:var(--sans)">Último error: ${esc(t.error)}</span>` : "");
   $("#dPause").innerHTML = t.paused ? ICON.play + " Reanudar" : ICON.pause + " Pausar";
@@ -1164,9 +1313,8 @@ function renderDetail(){
   // consola estilo ping -t
   const con = $("#dConsole"), atBottom = con.scrollTop + con.clientHeight >= con.scrollHeight - 8;
   const last = (S.buf[t.id] || []).slice(-120);
-  con.innerHTML = last.map(s => s[2] >= 0
-    ? `<span class="${s[2] >= S.settings.highLatencyMs ? "hi" : ""}">[${hms(s[1])}] Respuesta desde ${esc(t.host)}: bytes=32 tiempo${s[2] === 0 ? "<1" : "="+s[2]}ms TTL=${s[3]}</span>`
-    : `<span class="to">[${hms(s[1])}] Tiempo de espera agotado para esta solicitud.</span>`).join("\n");
+  const cert = t.certDays != null ? `<span class="${t.certDays <= 14 ? "hi" : ""}">Certificado: ${esc(t.certSubject || "")} · caduca el ${new Date(t.certExpires).toLocaleDateString("es")} (${t.certDays < 0 ? "caducado" : t.certDays + " días"})</span>\n` : "";
+  con.innerHTML = cert + last.map(s => consoleLine(t, s)).join("\n");
   if (atBottom) con.scrollTop = con.scrollHeight;
 }
 $("#dCanvas").addEventListener("mousemove", e => {
@@ -1180,6 +1328,7 @@ $("#dCanvas").addEventListener("mousemove", e => {
 $("#dCanvas").addEventListener("mouseleave", () => $("#dTip").style.display = "none");
 $("#dPause").onclick = async () => { const t = S.byId[S.detailId]; if (t) await post("/api/targets/pause", {id:t.id, paused:!t.paused}); };
 $("#dTrace").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTrace(t.host, true); } };
+$("#dAddSvc").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTarget(null, {check:"tcp", host:t.host, name:t.name, group:t.group}); } };
 $("#dEdit").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTarget(t); } };
 $("#dReset").onclick = async () => { const t = S.byId[S.detailId]; if (t){ await post("/api/targets/reset", {id:t.id}); toast("", "Estadísticas reiniciadas", title(t)); } };
 
@@ -1330,7 +1479,7 @@ function renderAvail(){
   $("#aBody").innerHTML = it.length ? it.map(x => {
     const c = avColor(x.availability), p = x.availability == null ? 0 : Math.max(2, x.availability);
     return `<tr data-id="${esc(x.id)}">
-      <td class="a-nm"><b>${esc(x.name || x.host)}</b>${x.name ? `<small>${esc(x.host)}</small>` : ""}</td>
+      <td class="a-nm"><b>${(KIND_IC[x.check] || "") + esc(x.name || x.host)}</b><small>${esc(x.check === "http" ? x.url : x.host + (x.check === "tcp" ? " · " + x.label : ""))}</small></td>
       <td style="color:var(--muted)">${esc(x.group || "—")}</td>
       <td><div class="a-bar"><div class="tr"><i style="width:${p}%;background:${c}"></i></div><b style="color:${c}">${fmtPct(x.availability)}</b></div></td>
       <td class="t" style="width:auto">${x.outages}${x.ongoing ? ' <span class="tag mon" style="background:var(--bad-soft);color:var(--bad)">en curso</span>' : ""}</td>
