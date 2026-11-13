@@ -141,7 +141,7 @@ namespace MonitorIPs
 
         static DateTime LocalDate(long minute) { return Util.FromUnixMs(minute * 60000).Date; }
         static string PathFor(DateTime day) { return Path.Combine(dir, day.ToString("yyyy-MM-dd", Inv) + ".csv"); }
-        static long DayStartMinute(DateTime day) { return (long)(day.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMinutes; }
+        public static long DayStartMinute(DateTime day) { return (long)(day.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMinutes; }
 
         /// <summary>Filas de un día agrupadas por IP y ordenadas por minuto.</summary>
         static Dictionary<string, List<Row>> ReadDay(DateTime day, HashSet<string> ids)
@@ -251,20 +251,32 @@ namespace MonitorIPs
 
         static Dictionary<string, IdResult> Compute(HashSet<string> ids, string range, bool buckets, out long fromMin, out long toMin, out int bucketMin)
         {
-            Flush(false); // que el archivo de hoy tenga todos los minutos cerrados
             int span;
             RangeParams(range, out span, out bucketMin);
             toMin = Util.NowMs() / 60000;                      // minuto en curso (excluido: aún abierto)
             fromMin = (toMin - span) / bucketMin * bucketMin;  // alineado al tramo
             int nb = (int)((toMin - fromMin + bucketMin - 1) / bucketMin);
+            long f = fromMin; int bm = bucketMin;
+            return Compute(ids, fromMin, toMin, buckets ? nb : 0, m => (int)((m - f) / bm), bucketMin >= 60);
+        }
+
+        /// <summary>
+        /// Agrega [fromMin, toMin) para cada IP. nb = número de tramos (0 = sin tramos) e idx = tramo de un minuto.
+        /// hourly = los días cerrados se pueden leer por horas (tramos de 1 h o más).
+        /// </summary>
+        static Dictionary<string, IdResult> Compute(HashSet<string> ids, long fromMin, long toMin, int nb, Func<long, int> idx, bool hourly)
+        {
+            Flush(false); // que el archivo de hoy tenga todos los minutos cerrados
+            bool buckets = nb > 0;
             var res = new Dictionary<string, IdResult>();
             foreach (var id in ids) res[id] = new IdResult { Buckets = buckets ? new Agg[nb] : null };
 
             DateTime yesterday = DateTime.Today.AddDays(-1);
-            for (DateTime day = LocalDate(fromMin); day <= DateTime.Today; day = day.AddDays(1))
+            DateTime lastDay = LocalDate(Math.Max(fromMin, toMin - 1));
+            for (DateTime day = LocalDate(fromMin); day <= lastDay; day = day.AddDays(1))
             {
                 long dayStart = DayStartMinute(day);
-                if (day < yesterday && bucketMin >= 60)
+                if (day < yesterday && hourly)
                 {
                     // día cerrado: horas cacheadas
                     var cd = CachedDay(day);
@@ -279,7 +291,7 @@ namespace MonitorIPs
                             long start = dayStart + h * 60;
                             if (a == null || start < fromMin || start >= toMin) continue;
                             r.Total.Add(a);
-                            if (r.Buckets != null) AddTo(r.Buckets, (int)((start - fromMin) / bucketMin), a);
+                            if (r.Buckets != null) AddTo(r.Buckets, idx(start), a);
                         }
                         foreach (var run in idd.Runs) AddRun(r.Runs, run);
                     }
@@ -297,7 +309,7 @@ namespace MonitorIPs
                             if (r.Buckets != null)
                             {
                                 var one = new Agg(); one.Add(row);
-                                AddTo(r.Buckets, (int)((row.Minute - fromMin) / bucketMin), one);
+                                AddTo(r.Buckets, idx(row.Minute), one);
                             }
                             if (row.Down) AddRun(r.Runs, new long[] { row.Minute, row.Minute + 1 });
                         }
@@ -378,6 +390,51 @@ namespace MonitorIPs
             var set = new HashSet<string>(ids);
             var all = Compute(set, range, false, out fromMin, out toMin, out bucketMin);
             return all.ToDictionary(kv => kv.Key, kv => SummaryOf(kv.Value, toMin, downNow(kv.Key)));
+        }
+
+        /// <summary>Datos del informe: resumen y caídas por IP, más la disponibilidad global por día (o por hora).</summary>
+        public class ReportData
+        {
+            public long FromMin, ToMin;
+            public bool Daily;
+            public Dictionary<string, Dictionary<string, object>> Summary = new Dictionary<string, Dictionary<string, object>>();
+            public Dictionary<string, List<long[]>> Runs = new Dictionary<string, List<long[]>>();
+            /// <summary>Por tramo: inicio (minuto Unix), minutos vigilados y minutos caídos (todas las IPs).</summary>
+            public long[] BucketStart; public long[] BucketMins, BucketDown;
+        }
+
+        /// <summary>Informe de [fromMin, toMin): tramos diarios alineados a la medianoche local, u horarios si daily = false.</summary>
+        public static ReportData Report(IEnumerable<string> ids, long fromMin, long toMin, bool daily, Func<string, bool> downNow)
+        {
+            var set = new HashSet<string>(ids);
+            int nb; Func<long, int> idx; long[] starts;
+            if (daily)
+            {
+                DateTime first = LocalDate(fromMin), last = LocalDate(Math.Max(fromMin, toMin - 1));
+                nb = (int)(last - first).TotalDays + 1;
+                starts = Enumerable.Range(0, nb).Select(i => DayStartMinute(first.AddDays(i))).ToArray();
+                idx = m => (int)(LocalDate(m) - first).TotalDays;
+            }
+            else
+            {
+                long h0 = fromMin / 60 * 60;
+                nb = (int)((toMin - h0 + 59) / 60);
+                starts = Enumerable.Range(0, nb).Select(i => h0 + i * 60L).ToArray();
+                idx = m => (int)((m - h0) / 60);
+            }
+            var all = Compute(set, fromMin, toMin, Math.Max(1, nb), idx, true);
+            var rep = new ReportData { FromMin = fromMin, ToMin = toMin, Daily = daily, BucketStart = starts, BucketMins = new long[nb], BucketDown = new long[nb] };
+            foreach (var kv in all)
+            {
+                rep.Summary[kv.Key] = SummaryOf(kv.Value, toMin, downNow(kv.Key));
+                rep.Runs[kv.Key] = kv.Value.Runs;
+                for (int i = 0; i < nb && i < kv.Value.Buckets.Length; i++)
+                {
+                    var b = kv.Value.Buckets[i]; if (b == null) continue;
+                    rep.BucketMins[i] += b.Mins; rep.BucketDown[i] += b.DownMins;
+                }
+            }
+            return rep;
         }
     }
 }
