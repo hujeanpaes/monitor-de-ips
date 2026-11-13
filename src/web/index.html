@@ -324,8 +324,105 @@ tr.final td{background:var(--ok-soft)}
 .offline{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:var(--bad);color:#fff;padding:8px 16px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);display:none;z-index:120}
 .offline.show{display:block}
 
+/* ---------- selector de vista (tarjetas / lista) ---------- */
+.vsw{display:flex;gap:2px;padding:3px;flex:none;background:var(--bg2);border:1px solid var(--border);border-radius:11px}
+.vsw button{width:32px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+.vsw button:hover{background:var(--hover);color:var(--text)}
+.vsw button.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25),inset 0 0 0 1px var(--border2)}
+
+/* ---------- vista de lista compacta ---------- */
+.list{--lcols:12px minmax(120px,1.5fr) minmax(110px,1.2fr) 84px minmax(120px,1.2fr) 120px 58px 58px 64px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.lrow{display:grid;grid-template-columns:var(--lcols);align-items:center;column-gap:12px;padding:0 12px 0 16px;min-height:40px}
+.l-head{min-height:32px;position:sticky;top:-20px;z-index:2;background:var(--bg2);border-bottom:1px solid var(--border);border-radius:var(--radius) var(--radius) 0 0;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:650;white-space:nowrap}
+.l-head button{border:0;background:none;padding:0;font:inherit;text-transform:inherit;letter-spacing:inherit;color:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:4px}
+.l-head button:hover,.l-head button.on{color:var(--text)}
+.l-head button.on::after{content:"▲";font-size:8px}
+.l-head button.on.desc::after{content:"▼"}
+.list .card{border:0;border-bottom:1px solid var(--border);border-radius:0;padding-top:0;padding-bottom:0;overflow:visible;transition:background .15s}
+.list .card:last-child{border-bottom:0;border-radius:0 0 var(--radius) var(--radius)}
+.list .card:hover{transform:none;box-shadow:none;background:var(--hover)}
+.list .card::before{inset:0 auto 0 0;width:3px}
+.list .card.s-bad{animation:none;background:var(--bad-soft)}
+.list .card.flash{animation:rowflash .5s ease-in-out 4}
+@keyframes rowflash{50%{background:color-mix(in srgb,var(--c) 28%,transparent)}}
+.list .dot{margin-top:0}
+.list .c-name{font-size:14px}
+.list .c-lat{font-size:16px;letter-spacing:0}
+.list .c-lat .u{font-size:11.5px;margin-left:2px}
+.list .c-lat.down{font-size:11px;letter-spacing:.03em;white-space:normal;line-height:1.2}
+.list .c-state{text-align:left;overflow:hidden;text-overflow:ellipsis}
+.list canvas.spark{height:22px;margin:0}
+.l-num{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.l-num.hot{color:var(--bad)} .l-num.warm{color:var(--warn)}
+.list .c-acts{position:absolute;right:8px;top:50%;transform:translateY(-50%);margin:0;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:2px;box-shadow:var(--shadow)}
+
+/* ---------- modo pantalla (NOC) ---------- */
+#noc{display:none}
+body.noc > header,body.noc > .bar,body.noc > .upd,body.noc > .layout{display:none !important}
+body.noc #noc{display:flex;flex-direction:column;flex:1;min-height:0;padding:18px 22px 20px;gap:16px;position:relative}
+body.noc.idle,body.noc.idle *{cursor:none !important}
+.n-top{display:flex;align-items:center;gap:28px;flex:none;flex-wrap:wrap}
+.n-clock{display:flex;flex-direction:column;line-height:1.05}
+.n-clock b{font-size:44px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.n-clock span{color:var(--muted);font-size:15px}
+.n-kpis{display:flex;gap:12px;flex-wrap:wrap}
+.n-k{display:flex;align-items:baseline;gap:10px;padding:10px 18px;border-radius:14px;background:var(--surface);border:1px solid var(--border)}
+.n-k b{font-size:38px;font-weight:750;line-height:1;font-variant-numeric:tabular-nums}
+.n-k span{color:var(--muted);font-size:14px;font-weight:600}
+.n-k.ok b{color:var(--ok)} .n-k.pause b{color:var(--pause)} .n-k.av b{color:var(--accent)}
+.n-k.bad b{color:var(--dim)}
+.n-k.bad.on{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 55%,var(--border));animation:alarm 1.6s ease-in-out infinite}
+.n-k.bad.on b{color:var(--bad)}
+.n-filter{color:var(--muted);font-size:14px}
+.n-filter b{color:var(--text)}
+.n-exit{position:absolute;top:14px;right:14px;transition:opacity .3s}
+body.noc.idle .n-exit{opacity:0}
+.n-area{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.n-tiles{flex:1;min-height:0;display:grid;gap:12px;justify-content:center;align-content:start}
+.n-mini{flex:none;display:flex;flex-wrap:wrap;gap:6px}
+.n-mini:empty{display:none}
+.tile{--c:var(--dim);position:relative;overflow:hidden;border-radius:14px;background:var(--surface);border:1px solid var(--border);padding:calc(var(--tw) * .045px) calc(var(--tw) * .06px);display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.tile::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--c)}
+.tile.s-ok{--c:var(--ok)} .tile.s-warn{--c:var(--warn)} .tile.s-pause{--c:var(--pause);opacity:.6} .tile.s-wait{--c:var(--dim)}
+.tile.s-warn{background:linear-gradient(180deg,var(--warn-soft),var(--surface) 80%);border-color:color-mix(in srgb,var(--warn) 40%,var(--border))}
+.tile.s-bad{--c:var(--bad);background:linear-gradient(180deg,color-mix(in srgb,var(--bad) 30%,var(--surface)),var(--bad-soft));border-color:var(--bad);animation:alarm 1.6s ease-in-out infinite}
+.tile.flash{animation:flash .5s ease-in-out 4}
+.tile .t-name{font-weight:650;font-size:clamp(12px,calc(var(--tw) * .075px),26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-sub{font-family:var(--mono);color:var(--muted);font-size:clamp(10px,calc(var(--tw) * .05px),16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-lat{font-weight:750;color:var(--c);font-size:clamp(16px,calc(var(--tw) * .16px),64px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-lat small{font-size:.4em;font-weight:600;color:var(--muted);margin-left:3px}
+.tile.s-bad .t-lat{font-size:clamp(13px,calc(var(--tw) * .085px),34px);letter-spacing:.03em}
+.tile .t-state{color:var(--muted);font-size:clamp(10px,calc(var(--tw) * .05px),16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t-state b{color:var(--c)}
+.mini{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:clamp(12.5px,.8vw,16px);max-width:280px}
+.mini i{width:8px;height:8px;border-radius:50%;flex:none;background:var(--ok)}
+.mini.s-pause{opacity:.6} .mini.s-pause i{background:var(--pause)}
+.mini span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini b{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+.n-allok{display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ok);font-size:30px;font-weight:700;padding:30px 0}
+.n-allok.show{display:flex}
+.n-allok small{color:var(--muted);font-size:16px;font-weight:500}
+.n-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);box-shadow:var(--shadow);padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .4s}
+.n-hint.show{opacity:1}
+.n-hint kbd{font-family:var(--mono);background:var(--bg2);border:1px solid var(--border2);border-radius:5px;padding:0 6px}
+
 /* ---------- adaptable: se va simplificando por pasos, nunca se superpone ---------- */
 .sc-foot,.tr-bar{flex-wrap:wrap}
+/* la lista se adapta al ancho real de su zona (con o sin panel de eventos), no al de la ventana */
+main{container-type:inline-size}
+@container (max-width:900px){
+  .list{--lcols:12px minmax(100px,1.5fr) minmax(90px,1.1fr) 72px minmax(100px,1.2fr) 90px 56px}
+  .list .l-avg,.list .l-max{display:none}
+}
+@container (max-width:640px){
+  .list{--lcols:12px minmax(100px,1.4fr) minmax(90px,1fr) 72px minmax(100px,1.2fr) 56px}
+  .list .l-sp{display:none}
+  .lrow{column-gap:10px;padding:0 10px 0 14px}
+}
+@container (max-width:520px){
+  .list{--lcols:12px minmax(90px,1fr) 70px minmax(80px,1fr)}
+  .list .l-host,.list .l-loss{display:none}
+}
 @media (max-width:1280px){ .clock{display:none} }
 @media (max-width:1100px){
   .actions .btn:not(.primary) .lbl{display:none}
@@ -348,7 +445,7 @@ tr.final td{background:var(--ok-soft)}
   .bar{flex-wrap:wrap;padding:8px 12px;gap:8px}
   .seg-f{flex:1 1 100%;justify-content:space-between}
   .seg-f .pill{flex:1;justify-content:center}
-  .search{flex:1 1 100%}
+  .search{flex:1 1 0}
   main{padding:14px 12px 30px}
   aside.events{width:min(340px,100%)}
   .d-stats{grid-template-columns:repeat(2,1fr)}
@@ -382,6 +479,7 @@ tr.final td{background:var(--ok-soft)}
     <button class="btn wide-only" id="btnScan" title="Descubrir IPs activas en un rango"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></svg><span class="lbl">Escanear red</span></button>
     <button class="btn wide-only" id="btnTrace" title="Trazar la ruta a una IP"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><span class="lbl">Tracert</span></button>
     <span class="sep wide-only"></span>
+    <button class="ibtn wide-only" id="btnNoc" title="Modo pantalla para monitor de pared (tecla M)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
     <button class="ibtn" id="btnEvents" title="Panel de eventos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="evBadge">0</span></button>
     <button class="ibtn wide-only" id="btnSound" title="Sonido de alertas"></button>
     <button class="ibtn wide-only" id="btnTheme" title="Cambiar tema"></button>
@@ -394,6 +492,8 @@ tr.final td{background:var(--ok-soft)}
       <button data-act="sound" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><div>Sonido de alertas<small id="mSoundState">Activar / silenciar</small></div></button>
       <button data-act="theme" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><div>Cambiar tema<small>Claro / oscuro</small></div></button>
       <hr class="narrow-only">
+        <button data-act="noc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div>Modo pantalla<small>Vista para monitor de pared (tecla M)</small></div></button>
+        <hr>
         <button data-act="exp-events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><div>Exportar eventos<small>Caídas y recuperaciones (CSV)</small></div></button>
         <button data-act="exp-summary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div>Exportar resumen<small>Estadísticas por IP (CSV)</small></div></button>
         <button data-act="exp-samples"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><div>Exportar latencias<small>Cada respuesta, últimos 15 min (CSV)</small></div></button>
@@ -421,6 +521,10 @@ tr.final td{background:var(--ok-soft)}
   </div>
   <div class="spacer wide-only"></div>
   <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar IP, nombre, grupo o rango (192.168.3.1-50)…" title="Busca por texto o filtra por rango: 192.168.3.1-50 · 192.168.3.1 - 192.168.3.100 · 10.64.12.0/24  (Ctrl+F)" autocomplete="off"></label>
+  <div class="vsw" id="vsw" role="group" aria-label="Vista">
+    <button data-v="cards" title="Vista de tarjetas (tecla V)" aria-label="Tarjetas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg></button>
+    <button data-v="list" title="Vista de lista compacta (tecla V)" aria-label="Lista"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1" fill="currentColor"/><circle cx="3.5" cy="12" r="1" fill="currentColor"/><circle cx="3.5" cy="18" r="1" fill="currentColor"/></svg></button>
+  </div>
   <span class="clock" id="clock"></span>
 </nav>
 <div class="upd" id="updBar" role="status">
@@ -449,6 +553,27 @@ tr.final td{background:var(--ok-soft)}
     <div id="evList"></div>
   </aside>
 </div>
+
+<!-- Modo pantalla (NOC): sólo lo importante, en grande y sin scroll -->
+<section id="noc" aria-label="Modo pantalla">
+  <div class="n-top">
+    <div class="n-clock"><b id="nTime"></b><span id="nDate"></span></div>
+    <div class="n-kpis">
+      <div class="n-k bad" id="nDownK"><b id="nDown">0</b><span>Caídas</span></div>
+      <div class="n-k ok"><b id="nUp">0</b><span>En línea</span></div>
+      <div class="n-k pause"><b id="nPause">0</b><span>Pausadas</span></div>
+      <div class="n-k av" title="Disponibilidad media de las últimas 24 h (ponderada por minutos vigilados)"><b id="nAv">—</b><span>Disponibilidad 24 h</span></div>
+    </div>
+    <div class="n-filter" id="nFilter"></div>
+  </div>
+  <div class="n-area" id="nArea">
+    <div class="n-allok" id="nAllOk"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>Todo en línea<small id="nAllOkTxt"></small></div>
+    <div class="n-tiles" id="nTiles"></div>
+    <div class="n-mini" id="nMini"></div>
+  </div>
+  <button class="ibtn n-exit" id="nExit" title="Salir del modo pantalla (Esc)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <div class="n-hint" id="nHint">Pulsa <kbd>F11</kbd> para pantalla completa · <kbd>Esc</kbd> para salir</div>
+</section>
 
 <!-- Añadir / editar -->
 <dialog id="dlgTarget">
@@ -649,7 +774,10 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp
 
 const S = { seq:0, ev:0, targets:[], byId:{}, buf:{}, epoch:{}, events:[], settings:{}, loaded:false,
             filter:"", filterRange:null, stateFilter:null, evFilter:"all", evClearSeq:+(localStorage.getItem("evClear")||0),
-            unseen:0, detailId:null, range:300, cards:{}, layoutSig:"", lastGroup:"" };
+            unseen:0, detailId:null, range:300, cards:{}, rows:{}, tiles:{}, layoutSig:"", nocSig:"", lastGroup:"",
+            view:"cards", noc:false, sort:{k:"", asc:true} };
+// vista, orden y modo pantalla se guardan en config.json: el puerto local cambia en cada arranque y con él el localStorage
+const parseSort = s => { const m = /^(name|lat|state|loss):(asc|desc)$/.exec(s || ""); return m ? {k:m[1], asc:m[2] === "asc"} : {k:"", asc:true}; };
 
 // ------------------------------------------------------------ API
 async function api(method, url, body){
@@ -786,18 +914,19 @@ const ICON = {
   sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
 };
 
-function buildCard(t){
-  const el = document.createElement("div");
-  el.className = "card"; el.dataset.id = t.id; el.tabIndex = 0;
-  el.innerHTML = `
-    <div class="c-top"><span class="dot"></span>
-      <div class="c-title"><div class="c-name"></div><div class="c-host"></div></div>
+const ACTS_HTML = () => `
       <div class="c-acts">
         <button data-a="pause" title="Pausar / reanudar"></button>
         <button data-a="trace" title="Tracert">${ICON.trace}</button>
         <button data-a="edit" title="Editar">${ICON.edit}</button>
         <button data-a="del" class="del" title="Eliminar">${ICON.del}</button>
-      </div></div>
+      </div>`;
+function buildCard(t){
+  const el = document.createElement("div");
+  el.className = "card"; el.dataset.id = t.id; el.tabIndex = 0;
+  el.innerHTML = `
+    <div class="c-top"><span class="dot"></span>
+      <div class="c-title"><div class="c-name"></div><div class="c-host"></div></div>${ACTS_HTML()}</div>
     <div class="c-mid"><div class="c-lat"></div><div class="c-state"></div></div>
     <canvas class="spark"></canvas>
     <div class="c-stats"><div><label>Mín</label><b data-k="min"></b></div><div><label>Prom</label><b data-k="avg"></b></div><div><label>Máx</label><b data-k="max"></b></div><div><label>Pérdida</label><b data-k="loss"></b></div></div>`;
@@ -805,9 +934,58 @@ function buildCard(t){
   return { el, name:q(".c-name"), host:q(".c-host"), lat:q(".c-lat"), state:q(".c-state"), cv:q("canvas"), pause:q('[data-a="pause"]'),
            min:q('[data-k="min"]'), avg:q('[data-k="avg"]'), max:q('[data-k="max"]'), loss:q('[data-k="loss"]'), c:"" };
 }
+/** Fila de la vista de lista: devuelve los mismos campos que buildCard, así render() sirve para ambas. */
+function buildRow(t){
+  const el = document.createElement("div");
+  el.className = "card lrow"; el.dataset.id = t.id; el.tabIndex = 0;
+  el.innerHTML = `<span class="dot"></span><div class="c-name"></div><div class="c-host l-host"></div><div class="c-lat"></div><div class="c-state"></div>
+    <canvas class="spark l-sp"></canvas><b class="l-num l-avg" data-k="avg"></b><b class="l-num l-max" data-k="max"></b><b class="l-num l-loss" data-k="loss"></b>${ACTS_HTML()}`;
+  const q = s => el.querySelector(s);
+  return { el, name:q(".c-name"), host:q(".c-host"), lat:q(".c-lat"), state:q(".c-state"), cv:q("canvas"), pause:q('[data-a="pause"]'),
+           min:document.createElement("b"), avg:q('[data-k="avg"]'), max:q('[data-k="max"]'), loss:q('[data-k="loss"]'), c:"" };
+}
+const LIST_COLS = [["","",""],["name","Nombre",""],["","IP / servicio","l-host"],["lat","Latencia",""],["state","Estado",""],["","Últimos 2 min","l-sp"],["","Prom","l-avg"],["","Máx","l-max"],["loss","Pérdida","l-loss"]];
+function listHead(){
+  return `<div class="lrow l-head">` + LIST_COLS.map(([k, txt, c]) => k
+    ? `<button data-s="${k}" class="${c}${S.sort.k === k ? " on" + (S.sort.asc ? "" : " desc") : ""}" title="Ordenar por ${txt.toLowerCase()}">${txt}</button>`
+    : `<span class="${c}">${txt}</span>`).join("") + `</div>`;
+}
+// gravedad: caídas → con avisos → iniciando → en línea → pausadas
+const RANK = {"s-bad":0, "s-warn":1, "s-wait":2, "s-ok":3, "s-pause":4};
+const NAME_CMP = new Intl.Collator("es", {numeric:true, sensitivity:"base"});
+function sortList(list){
+  const k = S.sort.k; if (!k) return list;
+  const dir = S.sort.asc ? 1 : -1;
+  const val = t => k === "name" ? title(t)
+                : k === "state" ? RANK[cls(t)]
+                : k === "loss" ? (t.window ? t.loss : -1)
+                : (t.state === "down" || t.paused || t.last < 0 ? Infinity : t.last);
+  return list.map((t, i) => [t, i]).sort((a, b) => {
+    const x = val(a[0]), y = val(b[0]);
+    if (k === "lat" && x !== y && (x === Infinity || y === Infinity)) return x === Infinity ? 1 : -1; // sin dato siempre al final
+    if (k === "name") return dir * NAME_CMP.compare(x, y) || a[1] - b[1];   // "Sucursal 2" antes que "Sucursal 10"
+    return (x < y ? -dir : x > y ? dir : 0) || a[1] - b[1];
+  }).map(p => p[0]);
+}
+function setSort(k){
+  if (S.sort.k !== k) S.sort = {k, asc:true};
+  else if (S.sort.asc) S.sort = {k, asc:false};
+  else S.sort = {k:"", asc:true};
+  post("/api/settings", {listSort: S.sort.k ? S.sort.k + ":" + (S.sort.asc ? "asc" : "desc") : ""}).catch(()=>{});
+  S.layoutSig = ""; render();
+}
+function setView(v){
+  if (v !== "list") v = "cards";
+  S.view = v; $$("#vsw button").forEach(b => b.classList.toggle("sel", b.dataset.v === v));
+  if (S.loaded){ S.layoutSig = ""; render(); post("/api/settings", {view:v}).catch(()=>{}); }
+}
+$("#vsw").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setView(b.dataset.v); });
 
 function matches(t){
   if (S.stateFilter){ const c = cls(t); if (S.stateFilter === "ok" && c !== "s-ok" && c !== "s-warn") return false; if (S.stateFilter === "bad" && c !== "s-bad") return false; if (S.stateFilter === "pause" && c !== "s-pause") return false; }
+  return textMatch(t);
+}
+function textMatch(t){
   if (!S.filter) return true;
   const rg = S.filterRange;
   if (rg){ const n = ip2n(t.host); return n != null && n >= rg[0] && n <= rg[1]; }
@@ -817,28 +995,37 @@ function matches(t){
 
 function render(){
   const now = Date.now();
-  const visible = S.targets.filter(matches);
+  for (const c of [S.cards, S.rows, S.tiles]) for (const id in c) if (!S.byId[id]) delete c[id];
+  updateCounters();
+  if (S.noc){ renderNoc(now); return; }
+
+  const isList = S.view === "list", cache = isList ? S.rows : S.cards;
+  let visible = S.targets.filter(matches);
   // estructura (sólo cuando cambia)
-  const sig = visible.map(t => t.id+"|"+t.group).join(",");
+  const groups = new Map();
+  for (const t of visible){ const g = t.group || ""; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(t); }
+  if (isList) for (const [g, list] of groups) groups.set(g, sortList(list));
+  visible = [].concat(...groups.values());
+  const sig = S.view + "|" + S.sort.k + S.sort.asc + "|" + visible.map(t => t.id+"|"+t.group).join(",");
   if (sig !== S.layoutSig){
     S.layoutSig = sig;
-    const groups = new Map();
-    for (const t of visible){ const g = t.group || ""; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(t); }
-    const root = $("#groups"); root.innerHTML = "";
+    const main = $("#main"), keep = main.scrollTop;   // al reconstruir no se pierde la posición (p. ej. al reordenar)
+    const root = $("#groups"); root.style.minHeight = root.offsetHeight + "px"; root.innerHTML = "";
     const multi = groups.size > 1 || (groups.size === 1 && !groups.has(""));
     for (const [g, list] of groups){
       const sec = document.createElement("section"); sec.className = "group";
       if (multi) sec.innerHTML = `<div class="group-h"><span>${esc(g || "Sin grupo")}</span><span class="gstat" data-g="${esc(g)}"></span><span class="line"></span></div>`;
-      const grid = document.createElement("div"); grid.className = "grid";
-      for (const t of list){ if (!S.cards[t.id]) S.cards[t.id] = buildCard(t); grid.appendChild(S.cards[t.id].el); }
-      sec.appendChild(grid); root.appendChild(sec);
+      const box = document.createElement("div"); box.className = isList ? "list" : "grid";
+      if (isList) box.innerHTML = listHead();
+      for (const t of list){ if (!cache[t.id]) cache[t.id] = (isList ? buildRow : buildCard)(t); box.appendChild(cache[t.id].el); }
+      sec.appendChild(box); root.appendChild(sec);
     }
+    root.style.minHeight = ""; main.scrollTop = keep;
   }
-  for (const id in S.cards) if (!S.byId[id]) delete S.cards[id];
 
   // contenido
   for (const t of visible){
-    const k = S.cards[t.id]; if (!k) continue;
+    const k = cache[t.id]; if (!k) continue;
     const c = cls(t);
     if (k.c !== c){ k.el.classList.remove(k.c || "x"); k.el.classList.add(c); k.c = c; }
     k.name.innerHTML = (KIND_IC[t.check] || "") + esc(title(t));
@@ -853,7 +1040,7 @@ function render(){
     k.pause.innerHTML = t.paused ? ICON.play : ICON.pause;
     k.min.textContent = fmtMs(t.min); k.avg.textContent = fmtMs(t.avg); k.max.textContent = fmtMs(t.max);
     k.loss.textContent = t.window ? t.loss + "%" : "—";
-    k.loss.className = t.loss >= 10 ? "hot" : t.loss > 0 ? "warm" : "";
+    k.loss.classList.toggle("hot", t.loss >= 10); k.loss.classList.toggle("warm", t.loss > 0 && t.loss < 10);
     drawChart(k.cv, S.buf[t.id] || [], {win:120, color:colorFor(c), interval:t.interval/1000});
   }
   // stats de grupo
@@ -864,12 +1051,6 @@ function render(){
     el.style.color = down ? "var(--bad)" : "";
   });
 
-  // contadores
-  const up = S.targets.filter(t => t.state === "up").length, dn = S.targets.filter(t => t.state === "down").length, pa = S.targets.filter(t => t.paused).length;
-  $("#cAll").textContent = S.targets.length; $("#cUp").textContent = up; $("#cDown").textContent = dn; $("#cPause").textContent = pa;
-  $("#pillBad").classList.toggle("on", dn > 0);
-  document.title = dn ? "(" + dn + ") Caídas · Monitor de IPs" : "Monitor de IPs";
-
   const none = S.targets.length === 0, filteredOut = !none && visible.length === 0;
   $("#empty").classList.toggle("show", none || filteredOut);
   $("#emptyTitle").textContent = none ? "Aún no hay IPs" : "Nada coincide con el filtro";
@@ -877,6 +1058,130 @@ function render(){
   $("#btnAdd2").style.display = none ? "" : "none";
 
   if (S.detailId) renderDetail();
+}
+
+function updateCounters(){
+  const up = S.targets.filter(t => t.state === "up").length, dn = S.targets.filter(t => t.state === "down").length, pa = S.targets.filter(t => t.paused).length;
+  $("#cAll").textContent = S.targets.length; $("#cUp").textContent = up; $("#cDown").textContent = dn; $("#cPause").textContent = pa;
+  $("#pillBad").classList.toggle("on", dn > 0);
+  document.title = dn ? "(" + dn + ") Caídas · Monitor de IPs" : "Monitor de IPs";
+}
+
+// ------------------------------------------------------------ modo pantalla (NOC)
+// Mosaico ordenado por gravedad que siempre cabe en pantalla; con muchas comprobaciones las que van bien pasan a pastillas.
+const NOC_MINI_FROM = 60;
+let nocAvail = null, nocAvailAt = 0, wakeLock = null, idleTimer = null, nocLayoutKey = "";
+function setNoc(on, save){
+  S.noc = !!on;
+  document.body.classList.toggle("noc", S.noc);
+  if (save !== false) post("/api/settings", {screenMode:S.noc}).catch(()=>{});
+  $("#menu").classList.remove("open");
+  keepScreenOn(S.noc);
+  if (S.noc){
+    S.nocSig = ""; nocLayoutKey = ""; nocAvailAt = 0; poke();
+    const h = $("#nHint"); h.classList.add("show"); setTimeout(() => h.classList.remove("show"), 5000);
+  } else { document.body.classList.remove("idle"); S.layoutSig = ""; }
+  render();
+}
+async function keepScreenOn(on){
+  try {
+    if (on && !wakeLock && navigator.wakeLock && document.visibilityState === "visible"){
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } else if (!on && wakeLock){ const w = wakeLock; wakeLock = null; await w.release(); }
+  } catch(e){ wakeLock = null; }
+}
+document.addEventListener("visibilitychange", () => { if (S.noc && document.visibilityState === "visible") keepScreenOn(true); });
+// el cursor y el botón de salir se ocultan tras 3 s sin mover el ratón
+function poke(){ document.body.classList.remove("idle"); clearTimeout(idleTimer); if (S.noc) idleTimer = setTimeout(() => document.body.classList.add("idle"), 3000); }
+document.addEventListener("mousemove", () => { if (S.noc) poke(); }, {passive:true});
+$("#nExit").onclick = () => setNoc(false);
+$("#btnNoc").onclick = () => setNoc(true);
+
+async function loadNocAvail(){
+  nocAvailAt = Date.now();
+  try { const r = await api("GET", "/api/availability?range=24h"); nocAvail = r.items; } catch(e){}
+}
+/** Columnas y tamaño de baldosa que aprovechan mejor el área sin scroll. */
+function fitTiles(n, W, H, gap){
+  let best = null;
+  for (let c = 1; c <= n; c++){
+    const r = Math.ceil(n / c);
+    let tw = (W - (c - 1) * gap) / c, th = (H - (r - 1) * gap) / r;
+    if (tw < 60 || th < 40) continue;
+    th = Math.min(th, tw * .7, 300); tw = Math.min(tw, th * 2.4, 520);
+    if (!best || tw * th > best.tw * best.th) best = {c, tw:Math.floor(tw), th:Math.floor(th)};
+  }
+  return best || {c:Math.max(1, Math.floor((W + gap) / (120 + gap))), tw:120, th:70};
+}
+function tileHtml(t, c, now){
+  const g = t.group ? " · " + esc(t.group) : "";
+  let lat, st;
+  if (c === "s-bad"){ lat = esc(t.short || "SIN RESPUESTA"); st = "<b>Caída</b> hace " + fmtDur(now - t.since); }
+  else if (c === "s-pause"){ lat = "—"; st = "<b>Pausada</b>"; }
+  else { lat = t.last >= 0 ? fmtMs(t.last) + "<small>ms</small>" : "—"; st = stateText(t, now); }
+  return `<div class="t-name">${KIND_IC[t.check] || ""}${esc(title(t))}</div><div class="t-lat">${lat}</div>`
+       + `<div><div class="t-sub">${esc(subLine(t))}${g}</div><div class="t-state">${st}</div></div>`;
+}
+function renderNoc(now){
+  const d = new Date(now);
+  $("#nTime").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  const ds = d.toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"});
+  $("#nDate").textContent = ds.charAt(0).toUpperCase() + ds.slice(1);
+  const vis = S.targets.filter(textMatch);
+  const withC = vis.map((t, i) => ({t, i, c:cls(t)})).sort((a, b) => RANK[a.c] - RANK[b.c] || a.i - b.i);
+  const dn = withC.filter(x => x.c === "s-bad").length;
+  $("#nDown").textContent = dn; $("#nDownK").classList.toggle("on", dn > 0);
+  $("#nUp").textContent = vis.filter(t => t.state === "up").length;
+  $("#nPause").textContent = vis.filter(t => t.paused).length;
+
+  if (now - nocAvailAt > 60000) loadNocAvail();
+  if (nocAvail){
+    let m = 0, dm = 0;
+    for (const a of nocAvail) if (S.byId[a.id] && textMatch(S.byId[a.id])){ m += a.minutes || 0; dm += a.downMinutes || 0; }
+    $("#nAv").textContent = m ? (Math.floor(1000 * (m - dm) / m) / 10).toLocaleString("es") + " %" : "—";
+  }
+
+  // con muchas comprobaciones, las que van bien (y las pausadas) pasan a pastillas pequeñas
+  const mini = withC.length > NOC_MINI_FROM;
+  const big = mini ? withC.filter(x => x.c !== "s-ok" && x.c !== "s-pause") : withC;
+  const small = mini ? withC.filter(x => x.c === "s-ok" || x.c === "s-pause") : [];
+  const allOk = withC.length > 0 && !withC.some(x => x.c === "s-bad" || x.c === "s-warn");
+  $("#nAllOk").classList.toggle("show", allOk && mini);
+  $("#nAllOkTxt").textContent = withC.length + (withC.length === 1 ? " comprobación" : " comprobaciones");
+  $("#nFilter").innerHTML = (allOk && !mini ? `<span style="color:var(--ok);font-weight:700;font-size:20px;margin-right:12px">✔ Todo en línea</span>` : "")
+    + (!withC.length ? "Sin comprobaciones que mostrar." : "")
+    + (S.filter ? `Mostrando <b>${vis.length}</b> de ${S.targets.length} · filtro «<b>${esc(S.filter)}</b>»` : "");
+
+  // estructura: sólo cuando cambia el orden o el reparto
+  const sig = big.map(x => x.t.id).join(",") + "|" + small.map(x => x.t.id).join(",");
+  if (sig !== S.nocSig){
+    S.nocSig = sig; nocLayoutKey = "";
+    const tiles = $("#nTiles"), minis = $("#nMini");
+    tiles.textContent = ""; minis.textContent = "";
+    for (const x of big){ const k = S.tiles[x.t.id] || (S.tiles[x.t.id] = {el:document.createElement("div"), c:""}); k.el.className = "tile " + x.c; k.c = x.c; k.el.dataset.id = x.t.id; tiles.appendChild(k.el); }
+    for (const x of small){ const k = S.tiles[x.t.id] || (S.tiles[x.t.id] = {el:document.createElement("div"), c:""}); k.el.className = "mini " + x.c; k.c = x.c; k.el.dataset.id = x.t.id; minis.appendChild(k.el); }
+  }
+  for (const x of withC){
+    const k = S.tiles[x.t.id]; if (!k) continue;
+    const isMini = k.el.classList.contains("mini");
+    if (k.c !== x.c){ k.el.classList.remove(k.c || "x"); k.el.classList.add(x.c); k.c = x.c; }
+    k.el.innerHTML = isMini ? `<i></i><span>${esc(title(x.t))}</span><b>${x.c === "s-pause" ? "pausa" : fmtMs(x.t.last) + " ms"}</b>` : tileHtml(x.t, x.c, now);
+    k.el.title = x.t.host + (x.t.error && x.c === "s-bad" ? " · " + x.t.error : "");
+  }
+
+  // tamaño de baldosa según el espacio libre
+  const area = $("#nArea"), tilesEl = $("#nTiles");
+  const H = area.clientHeight - ($("#nMini").offsetHeight ? $("#nMini").offsetHeight + 12 : 0) - ($("#nAllOk").offsetHeight || 0);
+  const key = big.length + "|" + area.clientWidth + "|" + H;
+  if (key !== nocLayoutKey && big.length){
+    nocLayoutKey = key;
+    const f = fitTiles(big.length, area.clientWidth, Math.max(H, 80), 12);
+    tilesEl.style.gridTemplateColumns = `repeat(${f.c}, ${f.tw}px)`;
+    tilesEl.style.gridAutoRows = f.th + "px";
+    tilesEl.style.setProperty("--tw", f.tw);
+  }
+  tilesEl.style.display = big.length ? "" : "none";
 }
 
 // ------------------------------------------------------------ polling
@@ -912,7 +1217,10 @@ async function poll(){
       if (S.events.length > 1000) S.events.splice(0, S.events.length - 1000);
       renderEvents();
     }
-    if (!S.loaded){ S.loaded = true; applySettingsUI(); renderEvents(); }
+    if (!S.loaded){
+      S.sort = parseSort(r.settings.listSort); setView(r.settings.view); S.loaded = true; applySettingsUI(); renderEvents();
+      if (r.settings.screenMode) setNoc(true, false);
+    }
     render();
   } catch(e){
     if (++failCount >= 3) $("#offline").classList.add("show");
@@ -948,7 +1256,7 @@ function onEvent(e){
   if (e.type === "down"){
     toast("bad", name + " sin respuesta", e.host + (e.detail ? " · " + e.detail : ""));
     beep("down"); notify("⚠ " + name + " caída", e.host + " no responde");
-    const k = S.cards[e.id]; if (k){ k.el.classList.remove("flash"); void k.el.offsetWidth; k.el.classList.add("flash"); }
+    for (const c of [S.cards, S.rows, S.tiles]){ const k = c[e.id]; if (k){ k.el.classList.remove("flash"); void k.el.offsetWidth; k.el.classList.add("flash"); } }
     if ($("#events").classList.contains("hidden")){ S.unseen++; updateBadge(); }
   } else if (e.type === "up"){
     toast("ok", name + " recuperada", e.host + " · estuvo caída " + fmtDur(e.dur*1000));
@@ -1017,6 +1325,7 @@ $("#btnSound").onclick = async () => { S.settings = await post("/api/settings", 
 
 // ------------------------------------------------------------ acciones de tarjeta
 $("#groups").addEventListener("click", async ev => {
+  const sh = ev.target.closest("[data-s]"); if (sh) return setSort(sh.dataset.s);
   const card = ev.target.closest(".card"); if (!card) return;
   const id = card.dataset.id, t = S.byId[id]; if (!t) return;
   const a = ev.target.closest("[data-a]");
@@ -1705,6 +2014,7 @@ menu.addEventListener("click", async e => {
     if (a === "trash") openTrash();
     if (a === "clear-all") confirmClearAll();
     if (a === "update") checkUpdates(true);
+    if (a === "noc") setNoc(true);
     if (a === "settings") openSettings();
     if (a === "quit") { await post("/api/quit"); document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:var(--muted)">Monitor cerrado. Ya puedes cerrar esta ventana.</div>'; setTimeout(() => window.close(), 400); }
   } catch(err){ toast("bad", "Error", err.message); }
@@ -1722,6 +2032,14 @@ $$(".pill").forEach(p => p.addEventListener("click", () => {
 $$("[data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
 $$("dialog").forEach(d => d.addEventListener("mousedown", e => { if (e.target === d) d.close(); }));
 document.addEventListener("keydown", e => {
+  const free = !e.ctrlKey && !e.altKey && !e.metaKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !document.querySelector("dialog[open]");
+  if (S.noc){
+    poke();
+    if (free && (e.key === "Escape" || e.key.toLowerCase() === "m")){ e.preventDefault(); setNoc(false); }
+    return;
+  }
+  if (free && e.key.toLowerCase() === "m"){ e.preventDefault(); setNoc(true); return; }
+  if (free && e.key.toLowerCase() === "v"){ e.preventDefault(); setView(S.view === "list" ? "cards" : "list"); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f"){ e.preventDefault(); $("#q").focus(); $("#q").select(); }
   else if (e.key === "Escape" && document.activeElement === $("#q")){ $("#q").value = ""; setFilter(""); $("#q").blur(); }
   else if (!e.ctrlKey && !e.altKey && e.key.toLowerCase() === "n" && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !document.querySelector("dialog[open]")){ e.preventDefault(); openTarget(null); }
