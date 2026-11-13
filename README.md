@@ -14,7 +14,8 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 |---|---|
 | **Ping continuo** | Una tarjeta por IP con latencia actual, gráfica de los últimos 2 min, mín/prom/máx y % de pérdida. Verde = en línea, ámbar = latencia alta o pérdidas, rojo = caída. |
 | **Detalle** | Gráfica de 1, 5 o 15 min, jitter, enviados/recibidos, último error y consola con el formato de `ping -t`. |
-| **Alertas** | Tras N fallos seguidos (por defecto 3) la IP pasa a *caída*: aviso en pantalla, pitido, contador en el título y notificación de Windows. Al recuperarse avisa con la duración de la caída. |
+| **Alertas** | Tras N fallos seguidos (por defecto 3) la IP pasa a *caída*: aviso en pantalla, pitido, contador en el título y notificación de Windows, también con la ventana cerrada. Al recuperarse avisa con la duración de la caída. |
+| **Bandeja e inicio con Windows** | Sigue vigilando en la bandeja al cerrar la ventana y puede arrancar solo al encender el equipo. |
 | **Tracert** | Traza salto a salto en vivo, con nombres DNS opcionales y botón para copiarla en formato `tracert`. |
 | **Escanear red** | Rango `192.168.3.1 - 192.168.3.254`, `192.168.3.1-254` o `192.168.3.0/24` (hasta 4096 IPs). Muestra IP, nombre, MAC y latencia. En la red local detecta también, por ARP, equipos que bloquean el ping. Las detectadas se añaden al monitor con un clic. |
 | **Organización** | Grupos, búsqueda por texto o por rango de IPs, filtros por estado (todas, en línea, caídas, pausadas) y pausa individual o global. |
@@ -45,7 +46,15 @@ Cada versión se publica en **[Releases](../../releases/latest)** con estas opci
 
 1. **Instalador:** ejecuta el Setup y abre *Monitor de IPs* desde el menú Inicio o el escritorio.
    **Portable:** coloca el `.exe` en cualquier carpeta y ábrelo con doble clic.
-2. Se abre una ventana propia (Edge en modo aplicación, sin pestañas). Al cerrarla, el monitor se detiene.
+2. Se abre una ventana propia (Edge en modo aplicación, sin pestañas).
+3. **Al cerrar la ventana el monitor sigue vigilando en la bandeja del sistema** (junto al reloj):
+   - El icono muestra un punto rojo si hay IPs caídas; al pasar el ratón se ve el resumen.
+   - Clic en el icono: abre la ventana o la trae al frente.
+   - Clic derecho: abrir, pausar o reanudar todas, sonido, iniciar con Windows y **Salir del monitor**.
+   - Las caídas y recuperaciones se avisan con notificaciones de Windows aunque la ventana esté cerrada.
+4. **Iniciar con Windows** (en *Ajustes*, en el menú de la bandeja o como opción del instalador): arranca directamente en la bandeja al encender el equipo.
+
+Si prefieres que cerrar la ventana cierre el monitor, desactiva *Ajustes → Seguir en la bandeja al cerrar*.
 
 ### Dónde guarda los datos
 
@@ -99,7 +108,8 @@ MonitorIPs.exe (C#, .NET Framework 4)
 
 | Archivo | Responsabilidad |
 |---|---|
-| `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y cierre automático. |
+| `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y ciclo de vida. |
+| `src/Tray.cs` | Icono de bandeja, menú, notificaciones con la ventana cerrada, enfoque de la ventana e inicio con Windows. |
 | `src/Monitor.cs` | Motor de ping, buffer circular de muestras, estadísticas, detección de caídas, eventos y papelera. |
 | `src/Tracer.cs` | Tracert mediante ping con TTL creciente. |
 | `src/Scanner.cs` | Escáner de rangos IPv4 en paralelo (ping + ARP) y subredes locales. |

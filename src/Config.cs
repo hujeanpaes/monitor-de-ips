@@ -44,6 +44,10 @@ namespace MonitorIPs
         public bool Notify { get; set; }
         public string Theme { get; set; }
         public bool ShowEvents { get; set; }
+        /// <summary>Al cerrar la ventana el monitor sigue en la bandeja (si es false, cerrar = salir).</summary>
+        public bool CloseToTray { get; set; }
+        /// <summary>Ya se mostró el aviso "sigue vigilando en la bandeja".</summary>
+        public bool TrayHintShown { get; set; }
 
         public AppConfig()
         {
@@ -56,6 +60,7 @@ namespace MonitorIPs
             Notify = true;
             Theme = "dark";
             ShowEvents = true;
+            CloseToTray = true;
         }
 
         public void Normalize()

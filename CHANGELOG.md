@@ -2,6 +2,19 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.4.0] - 2026-11-13
+
+### Añadido
+- **Bandeja del sistema:** al cerrar la ventana el monitor sigue vigilando junto al reloj. El icono muestra un punto rojo si hay caídas y un resumen al pasar el ratón; con clic abre o trae al frente la ventana, y con clic derecho tiene un menú para abrir, pausar o reanudar todas, sonido, inicio con Windows y salir.
+- **Notificaciones de Windows con la ventana cerrada** cuando una IP cae o se recupera (con sonido si está activado).
+- **Iniciar con Windows:** desde Ajustes, el menú de la bandeja o el instalador; arranca directamente en la bandeja (`--tray`). Si el portable cambia de carpeta, la ruta se corrige sola.
+- Ajuste **"Seguir en la bandeja al cerrar"** (activado por defecto); desactivado, cerrar la ventana cierra el monitor como antes.
+
+### Cambiado
+- Abrir el `.exe` con el monitor ya en marcha trae su ventana al frente en lugar de abrir otra.
+- "Salir del monitor" detiene el monitoreo y quita el icono de la bandeja.
+- El desinstalador elimina también el inicio con Windows.
+
 ## [1.3.1] - 2026-11-13
 
 ### Corregido
@@ -56,6 +69,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.4.0]: ../../releases/tag/v1.4.0
 [1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0
 [1.2.0]: ../../releases/tag/v1.2.0

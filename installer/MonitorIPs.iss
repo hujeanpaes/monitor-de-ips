@@ -61,6 +61,13 @@ es.FinishedLabel=Se ha instalado [name] en el equipo.%n%nTus IPs, logs y exporte
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
+Name: "autostart";   Description: "Iniciar {#AppName} con Windows (en la bandeja, junto al reloj)"; GroupDescription: "Inicio:"; Flags: unchecked
+
+[Registry]
+; Mismo valor que usa el ajuste "Iniciar con Windows" de la aplicación (src/Tray.cs, clase Autostart).
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "MonitorIPs"; ValueData: """{app}\{#AppExe}"" --tray"; Flags: uninsdeletevalue; Tasks: autostart
+; Al desinstalar se quita siempre, aunque se haya activado desde la aplicación.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "MonitorIPs"; Flags: uninsdeletevalue
 
 [Files]
 Source: "{#SourceExe}";       DestDir: "{app}"; Flags: ignoreversion

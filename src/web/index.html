@@ -343,7 +343,7 @@ tr.final td{background:var(--ok-soft)}
         <button data-act="clear-all" class="danger-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="m10 11 4 4M14 11l-4 4"/></svg><div>Eliminar todas las IPs…<small>Se mueven a la papelera</small></div></button>
         <hr>
         <button data-act="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><div>Ajustes</div></button>
-        <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor</div></button>
+        <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor<small>Detiene el monitoreo y quita el icono de la bandeja</small></div></button>
       </div>
     </div>
   </div>
@@ -446,6 +446,8 @@ tr.final td{background:var(--ok-soft)}
       <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" type="number" id="sHigh" min="1"><span class="hint">Por encima de este valor la tarjeta se pone en ámbar.</span></div>
       <div class="switch"><div>Sonido de alerta<small>Pitido al caer o recuperarse una IP</small></div><input type="checkbox" class="tg" id="sSound"></div>
       <div class="switch"><div>Notificaciones de Windows<small>Aviso aunque la ventana esté minimizada</small></div><input type="checkbox" class="tg" id="sNotify"></div>
+      <div class="switch"><div>Seguir en la bandeja al cerrar<small>Al cerrar la ventana el monitor sigue vigilando junto al reloj y avisa de las caídas</small></div><input type="checkbox" class="tg" id="sTray"></div>
+      <div class="switch"><div>Iniciar con Windows<small>Arranca en la bandeja al encender el equipo, sin abrir la ventana</small></div><input type="checkbox" class="tg" id="sAuto"></div>
       <div class="switch"><div>Probar alerta<small>Escucha cómo suena una caída</small></div><button type="button" class="btn sm" id="sTest">Probar</button></div>
       <div class="field" style="margin-top:12px"><label>Carpeta de datos</label><div class="hint" id="sDir" style="font-family:var(--mono);word-break:break-all"></div></div>
     </div>
@@ -1175,14 +1177,14 @@ $("#trCopy").onclick = async () => {
 function openSettings(){
   const s = S.settings;
   $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
-  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
+  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
   $("#dlgSettings").showModal();
 }
 $("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notification" in window && Notification.permission === "default") Notification.requestPermission(); });
 $("#sTest").onclick = () => { const was = S.settings.sound; S.settings.sound = true; beep("down"); S.settings.sound = was; toast("bad", "Ejemplo: Router sede sin respuesta", "10.0.0.1 · Tiempo de espera agotado"); };
 $("#fSettings").addEventListener("submit", async ev => {
   ev.preventDefault();
-  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, sound:$("#sSound").checked, notify:$("#sNotify").checked});
+  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked});
   applySettingsUI(); $("#dlgSettings").close(); toast("ok", "Ajustes guardados"); render();
 });
 
