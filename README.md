@@ -4,7 +4,7 @@ Monitor para Windows que vigila varias IPs a la vez por **ping continuo**, traza
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.3.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.5.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -20,7 +20,8 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 | **Escanear red** | Rango `192.168.3.1 - 192.168.3.254`, `192.168.3.1-254` o `192.168.3.0/24` (hasta 4096 IPs). Muestra IP, nombre, MAC y latencia. En la red local detecta también, por ARP, equipos que bloquean el ping. Las detectadas se añaden al monitor con un clic. |
 | **Organización** | Grupos, búsqueda por texto o por rango de IPs, filtros por estado (todas, en línea, caídas, pausadas) y pausa individual o global. |
 | **Papelera** | Las IPs eliminadas, una a una o todas, se pueden recuperar durante 30 días. Las acciones de borrado piden confirmación y se pueden deshacer. |
-| **Historial** | Log diario automático de eventos en CSV y exportación de eventos, resumen por IP y latencias (separador `;`, se abre directo en Excel). |
+| **Historial y disponibilidad** | Historial por minuto de cada IP (24 h, 7 días, 30 días): % de disponibilidad, caídas, tiempo caído y latencias, con gráfica y lista de caídas. Vista "Disponibilidad" de todas las IPs con exporte a CSV. |
+| **Logs y exportes** | Log diario automático de eventos en CSV y exportación de eventos, resumen por IP y latencias (separador `;`, se abre directo en Excel). |
 | **Interfaz** | Tema oscuro y claro, atajos de teclado (`N` añadir, `Ctrl+F` buscar) y diseño adaptable. |
 
 ## Requisitos
@@ -66,6 +67,7 @@ Si prefieres que cerrar la ventana cierre el monitor, desactiva *Ajustes → Seg
 | Archivo | Contenido |
 |---|---|
 | `config.json` | IPs, nombres, grupos, intervalos, papelera y ajustes. Se puede editar a mano. |
+| `history\AAAA-MM-DD.csv` | Historial por minuto e IP (disponibilidad y latencias). Se conserva 90 días por defecto (ajustable). |
 | `logs\eventos-AAAA-MM-DD.csv` | Caídas, recuperaciones y cambios del día. |
 | `exports\` | Archivos exportados desde el menú ⋮. |
 
@@ -110,6 +112,7 @@ MonitorIPs.exe (C#, .NET Framework 4)
 |---|---|
 | `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y ciclo de vida. |
 | `src/Tray.cs` | Icono de bandeja, menú, notificaciones con la ventana cerrada, enfoque de la ventana e inicio con Windows. |
+| `src/History.cs` | Historial por minuto en disco, cálculo de disponibilidad, caídas y tramos para las gráficas. |
 | `src/Monitor.cs` | Motor de ping, buffer circular de muestras, estadísticas, detección de caídas, eventos y papelera. |
 | `src/Tracer.cs` | Tracert mediante ping con TTL creciente. |
 | `src/Scanner.cs` | Escáner de rangos IPv4 en paralelo (ping + ARP) y subredes locales. |

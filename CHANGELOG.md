@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-11-13
+
+### Añadido
+- **Historial largo:** cada IP guarda por minuto sus pings, latencias y si estaba caída, en `history\AAAA-MM-DD.csv`. Antes sólo se conservaban los últimos 15 minutos en memoria.
+- **Pestaña "Historial" en el detalle** con 24 h, 7 días y 30 días: disponibilidad %, número de caídas, tiempo caído, caída más larga, latencia media y máxima, gráfica con las caídas en rojo y lista de caídas (con "en curso").
+- **Vista "Disponibilidad"** de todas las IPs: tabla ordenable con barra de disponibilidad, caídas, tiempo caído y latencia. Desde una fila se abre su historial, y el informe se puede **exportar a CSV**.
+- Ajuste **"Guardar historial durante"** (90 días por defecto, de 7 a 365), que muestra cuánto ocupa. Lo antiguo se borra solo.
+
+### Cambiado
+- Las marcas del eje de latencia usan pasos redondos (10, 20, 25…) también en la gráfica en vivo.
+
 ## [1.4.1] - 2026-11-13
 
 ### Corregido
@@ -78,6 +89,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.5.0]: ../../releases/tag/v1.5.0
 [1.4.1]: ../../releases/tag/v1.4.1
 [1.4.0]: ../../releases/tag/v1.4.0
 [1.3.1]: ../../releases/tag/v1.3.1
