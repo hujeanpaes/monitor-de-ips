@@ -14,7 +14,7 @@ namespace MonitorIPs
         public string TargetId;
         public string Name;
         public string Host;
-        public string Type;     // down | up | added | removed | paused | resumed | restored | cleared | scan
+        public string Type;     // down | up | cert | added | removed | paused | resumed | restored | cleared | scan
         public string Detail;
         public double Duration; // segundos (para "up": cuánto estuvo caída)
     }

@@ -1,0 +1,51 @@
+name: Informar de un error
+description: Algo no funciona como debería
+labels: ["error"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por avisar. No incluyas datos privados (IPs internas, tokens de Telegram, contraseñas).
+  - type: textarea
+    id: que
+    attributes:
+      label: ¿Qué pasó?
+      description: Qué esperabas y qué ocurrió en realidad.
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Abrir…
+        2. Pulsar…
+        3. Aparece…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión del monitor
+      description: Aparece al pie de *Ajustes* (por ejemplo, v1.10.1).
+    validations:
+      required: true
+  - type: dropdown
+    id: tipo
+    attributes:
+      label: Tipo de copia
+      options:
+        - Instalada
+        - Portable
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows
+      placeholder: Windows 11 Pro 24H2
+  - type: textarea
+    id: extra
+    attributes:
+      label: Capturas o líneas del log
+      description: Puedes arrastrar capturas aquí. Los logs están en la carpeta de datos (menú ⋮ → Abrir carpeta de logs).

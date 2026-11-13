@@ -150,7 +150,9 @@ main{flex:1;min-width:0;overflow:auto;padding:20px 22px 40px}
 .c-title{flex:1;min-width:0}
 .c-name{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .c-host{font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.c-acts{display:flex;gap:2px;opacity:0;transition:opacity .15s;margin:-4px -6px 0 0}
+/* las acciones flotan sobre la tarjeta al pasar el ratón: no restan ancho al nombre */
+.c-acts{display:flex;gap:2px;opacity:0;transition:opacity .15s;position:absolute;top:9px;right:9px;padding:2px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);box-shadow:var(--shadow);pointer-events:none}
+.card:hover .c-acts,.card:focus-within .c-acts{pointer-events:auto}
 .card:hover .c-acts,.card:focus-within .c-acts{opacity:1}
 .c-acts button{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer}
 .c-acts button:hover{background:var(--hover);color:var(--text)}
@@ -868,7 +870,7 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 const S = { seq:0, ev:0, targets:[], byId:{}, buf:{}, epoch:{}, events:[], settings:{}, loaded:false,
-            filter:"", filterRange:null, stateFilter:null, evFilter:"all", evClearSeq:+(localStorage.getItem("evClear")||0),
+            filter:"", filterRange:null, stateFilter:null, evFilter:"all", evClearSeq:0,
             unseen:0, detailId:null, range:300, cards:{}, rows:{}, tiles:{}, layoutSig:"", nocSig:"", lastGroup:"",
             view:"cards", noc:false, sort:{k:"", asc:true} };
 // vista, orden y modo pantalla se guardan en config.json: el puerto local cambia en cada arranque y con él el localStorage
@@ -949,7 +951,7 @@ function stateText(t, now){
 
 // ------------------------------------------------------------ colores (para canvas)
 let C = {};
-function readColors(){ const cs = getComputedStyle(document.documentElement); ["ok","warn","bad","pause","dim","muted","border","text","accent","surface"].forEach(k => C[k] = cs.getPropertyValue("--"+k).trim()); }
+function readColors(){ const cs = getComputedStyle(document.documentElement); ["ok","warn","bad","pause","dim","muted","accent"].forEach(k => C[k] = cs.getPropertyValue("--"+k).trim()); }
 function colorFor(c){ return c === "s-ok" ? C.ok : c === "s-warn" ? C.warn : c === "s-bad" ? C.bad : c === "s-pause" ? C.pause : C.dim; }
 function alpha(hex, a){ const n = parseInt(hex.slice(1),16); return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")"; }
 
@@ -1398,7 +1400,7 @@ function renderEvents(){
 }
 $("#evList").addEventListener("click", ev => { const el = ev.target.closest(".ev"); if (el && S.byId[el.dataset.id]) openDetail(el.dataset.id); });
 $("#evFilter").addEventListener("click", ev => { const b = ev.target.closest("button"); if (!b) return; S.evFilter = b.dataset.f; $$("#evFilter button").forEach(x => x.classList.toggle("on", x === b)); renderEvents(); });
-$("#evClear").onclick = () => { S.evClearSeq = S.ev; try { localStorage.setItem("evClear", S.ev); } catch(e){} renderEvents(); };
+$("#evClear").onclick = () => { S.evClearSeq = S.ev; renderEvents(); };   // sólo oculta la lista; el log en disco se conserva
 function setEventsVisible(v, save){
   $("#events").classList.toggle("hidden", !v); $("#btnEvents").classList.toggle("on", v);
   if (v){ S.unseen = 0; updateBadge(); }
@@ -1652,7 +1654,6 @@ $("#trEmpty").onclick = () => askConfirm({ title:"¿Vaciar la papelera?", ok:"Va
   html:"Se borrarán definitivamente todas las IPs de la papelera.<br>Esta acción <b>no se puede deshacer</b>.",
   onOk: async () => { const r = await post("/api/trash/delete", {all:true}); toast("", r.deleted + " IPs borradas definitivamente"); renderTrash(); } });
 
-// ------------------------------------------------------------ diálogo añadir/editar
 // ------------------------------------------------------------ tipos de comprobación (ping / TCP / web)
 const KIND_IC = {
   tcp:'<span class="kind-ic" title="Puerto TCP"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg></span>',
@@ -1858,7 +1859,6 @@ function fmtDT(ms, withDay){ const d = new Date(ms); return (withDay === false ?
 const RANGE_TXT = {"24h":"últimas 24 horas", "7d":"últimos 7 días", "30d":"últimos 30 días"};
 
 function setDetailTab(t){
-  H.tab = t;
   $$("#dTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
   $("#dLive").style.display = t === "live" ? "" : "none";
   $("#dHist").style.display = t === "hist" ? "" : "none";

@@ -113,14 +113,14 @@ namespace MonitorIPs
             double coverage = lines.Count > 0 ? 100.0 * totMin / (span * lines.Count) : 0;
 
             var sb = new StringBuilder();
-            sb.Append("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><title>").Append(H(o.Title)).Append("</title><style>").Append(Css).Append("</style></head><body>");
+            sb.Append("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><title>").Append(Util.Html(o.Title)).Append("</title><style>").Append(Css).Append("</style></head><body>");
 
             // cabecera
             sb.Append("<header><div class=\"brand\"><div class=\"logo\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12h4l3-8 4 16 3-8h6\"/></svg></div>")
-              .Append("<div><div class=\"kicker\">Informe de disponibilidad</div><h1>").Append(H(o.Title)).Append("</h1></div></div>")
-              .Append("<div class=\"meta\"><div><b>Periodo:</b> ").Append(H(o.PeriodLabel)).Append("</div>")
-              .Append("<div><b>Alcance:</b> ").Append(H(o.Scope)).Append(" · ").Append(lines.Count).Append(lines.Count == 1 ? " comprobación" : " comprobaciones").Append("</div>")
-              .Append("<div><b>Generado:</b> ").Append(H(DateTime.Now.ToString("d 'de' MMMM 'de' yyyy, HH:mm", Es))).Append(" · Monitor de IPs ").Append(H(o.Version)).Append("</div></div></header>");
+              .Append("<div><div class=\"kicker\">Informe de disponibilidad</div><h1>").Append(Util.Html(o.Title)).Append("</h1></div></div>")
+              .Append("<div class=\"meta\"><div><b>Periodo:</b> ").Append(Util.Html(o.PeriodLabel)).Append("</div>")
+              .Append("<div><b>Alcance:</b> ").Append(Util.Html(o.Scope)).Append(" · ").Append(lines.Count).Append(lines.Count == 1 ? " comprobación" : " comprobaciones").Append("</div>")
+              .Append("<div><b>Generado:</b> ").Append(Util.Html(DateTime.Now.ToString("d 'de' MMMM 'de' yyyy, HH:mm", Es))).Append(" · Monitor de IPs ").Append(Util.Html(o.Version)).Append("</div></div></header>");
 
             if (totMin == 0)
             {
@@ -151,14 +151,14 @@ namespace MonitorIPs
                 if (multi)
                 {
                     long gm = g.Sum(l => l.Minutes), gd = g.Sum(l => l.DownMinutes);
-                    sb.Append("<tr class=\"grp\"><td colspan=\"9\">").Append(H(g.Key == "" ? "Sin grupo" : g.Key))
+                    sb.Append("<tr class=\"grp\"><td colspan=\"9\">").Append(Util.Html(g.Key == "" ? "Sin grupo" : g.Key))
                       .Append("<span>").Append(g.Count()).Append(g.Count() == 1 ? " comprobación" : " comprobaciones")
                       .Append(gm > 0 ? " · " + Pct(100.0 * (gm - gd) / gm) : "").Append("</span></td></tr>");
                 }
                 foreach (var l in g.OrderBy(l => l.Avail ?? 101).ThenByDescending(l => l.Downtime).ThenBy(l => l.Name, StringComparer.Create(Es, true)))
                 {
                     double cov = 100.0 * l.Minutes / span;
-                    sb.Append("<tr><td><b>").Append(H(l.Name)).Append("</b><small>").Append(H(l.Sub)).Append("</small></td>")
+                    sb.Append("<tr><td><b>").Append(Util.Html(l.Name)).Append("</b><small>").Append(Util.Html(l.Sub)).Append("</small></td>")
                       .Append("<td>").Append(l.Kind).Append("</td>");
                     if (l.Avail == null) sb.Append("<td class=\"av\"><span class=\"muted\">sin datos</span></td>");
                     else
@@ -202,8 +202,8 @@ namespace MonitorIPs
                 foreach (var x in all.OrderBy(x => x.Item2).ThenBy(x => x.Item1.Name))
                 {
                     sb.Append("<tr><td>").Append(When(x.Item2)).Append("</td><td>").Append(x.Item4 ? "<b class=\"bad\">en curso</b>" : When(x.Item3))
-                      .Append("</td><td class=\"r\">").Append(Dur(x.Item3 - x.Item2)).Append("</td><td><b>").Append(H(x.Item1.Name)).Append("</b> <small class=\"inl\">")
-                      .Append(H(x.Item1.Sub)).Append("</small></td></tr>");
+                      .Append("</td><td class=\"r\">").Append(Dur(x.Item3 - x.Item2)).Append("</td><td><b>").Append(Util.Html(x.Item1.Name)).Append("</b> <small class=\"inl\">")
+                      .Append(Util.Html(x.Item1.Sub)).Append("</small></td></tr>");
                 }
                 sb.Append("</tbody></table>");
             }
@@ -245,13 +245,7 @@ namespace MonitorIPs
             {
                 double y = Y(v);
                 sb.AppendFormat(ic, "<line x1=\"{0}\" x2=\"{1}\" y1=\"{2:0.#}\" y2=\"{2:0.#}\" stroke=\"#e3e7ee\"/>", pl, W - pr, y)
-                  .AppendFormat(ic, "<text x=\"{0}\" y=\"{1:0.#}\" text-anchor=\"end\" class=\"ax\">{2}</text>", pl - 6, y + 3, H(v.ToString(v >= 99 && v < 100 ? "0.#" : "0", Es) + " %"));
-            }
-            if (floor < 99.9)
-            {
-                double y = Y(99.9);
-                sb.AppendFormat(ic, "<line x1=\"{0}\" x2=\"{1}\" y1=\"{2:0.#}\" y2=\"{2:0.#}\" stroke=\"#16a34a\" stroke-dasharray=\"4 3\" stroke-width=\"1\"/>", pl, W - pr, y)
-                  .AppendFormat(ic, "<text x=\"{0}\" y=\"{1:0.#}\" text-anchor=\"end\" class=\"ax ok\">objetivo 99,9 %</text>", W - pr, y < pt + 12 ? y + 11 : y - 4);
+                  .AppendFormat(ic, "<text x=\"{0}\" y=\"{1:0.#}\" text-anchor=\"end\" class=\"ax\">{2}</text>", pl - 6, y + 3, Util.Html(v.ToString(v >= 99 && v < 100 ? "0.#" : "0", Es) + " %"));
             }
             int every = d.Daily ? (n <= 16 ? 1 : n <= 35 ? 2 : (int)Math.Ceiling(n / 16.0)) : (n <= 26 ? 2 : 3);
             for (int i = 0; i < n; i++)
@@ -272,7 +266,11 @@ namespace MonitorIPs
                         d.Daily ? t.ToString(n > 31 ? "d/M" : "%d", Es) : t.ToString("HH", Es) + " h");
                 }
             }
-            sb.Append("</svg><div class=\"legend\"><span><i style=\"background:#22c55e\"></i>sin caídas</span><span><i style=\"background:#f59e0b\"></i>con caídas, ≥ 99,9 %</span><span><i style=\"background:#e11d48\"></i>&lt; 99,9 %</span><span><i style=\"background:#d5dae3\"></i>sin datos</span></div>");
+            // línea del objetivo encima de las barras (su texto va en la leyenda para no pisarlas)
+            if (floor < 99.9)
+                sb.AppendFormat(ic, "<line x1=\"{0}\" x2=\"{1}\" y1=\"{2:0.#}\" y2=\"{2:0.#}\" stroke=\"#15803d\" stroke-dasharray=\"5 3\" stroke-width=\"1.2\"/>", pl, W - pr, Y(99.9));
+            sb.Append("</svg><div class=\"legend\"><span><i style=\"background:#22c55e\"></i>sin caídas</span><span><i style=\"background:#f59e0b\"></i>con caídas, ≥ 99,9 %</span><span><i style=\"background:#e11d48\"></i>&lt; 99,9 %</span><span><i style=\"background:#d5dae3\"></i>sin datos</span>")
+              .Append(floor < 99.9 ? "<span><b class=\"goal\"></b>objetivo 99,9 %</span>" : "").Append("</div>");
             return sb.ToString();
         }
 
@@ -280,7 +278,7 @@ namespace MonitorIPs
 
         static string Kpi(string value, string label, string tone, string sub)
         {
-            return "<div class=\"kpi\"><b class=\"" + tone + "\">" + H(value) + "</b><span>" + H(label) + "</span>" + (sub != "" ? "<small>" + H(sub) + "</small>" : "") + "</div>";
+            return "<div class=\"kpi\"><b class=\"" + tone + "\">" + Util.Html(value) + "</b><span>" + Util.Html(label) + "</span>" + (sub != "" ? "<small>" + Util.Html(sub) + "</small>" : "") + "</div>";
         }
 
         static string Tone(double? v) { return v == null ? "" : v >= 99.9 ? "ok" : v >= 99 ? "warn" : "bad"; }
@@ -295,29 +293,17 @@ namespace MonitorIPs
 
         static string Ms(double v) { return v < 1 ? "<1 ms" : (v >= 100 ? Math.Round(v).ToString("N0", Es) : v.ToString("0.#", Es)) + " ms"; }
 
-        static string Dur(long minutes)
-        {
-            if (minutes <= 0) return "—";
-            long d = minutes / 1440, h = minutes % 1440 / 60, m = minutes % 60;
-            if (d > 0) return d + " d " + h + " h";
-            if (h > 0) return m == 0 ? h + " h" : h + " h " + m + " min";
-            return m + " min";
-        }
+        static string Dur(long minutes) { return minutes <= 0 ? "—" : Util.FormatDuration(minutes * 60.0); }
 
-        static string When(long minute) { return H(Util.FromUnixMs(minute * 60000).ToString("ddd d MMM, HH:mm", Es)); }
+        static string When(long minute) { return Util.Html(Util.FromUnixMs(minute * 60000).ToString("ddd d MMM, HH:mm", Es)); }
 
         static string Str(object o) { return o == null ? "" : Convert.ToString(o, CultureInfo.InvariantCulture); }
-
-        static string H(string s)
-        {
-            if (string.IsNullOrEmpty(s)) return "";
-            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#39;");
-        }
 
         const string Css = @"
 @page{size:A4;margin:15mm 14mm 17mm;@bottom-right{content:'Página ' counter(page) ' de ' counter(pages);font:8.5pt 'Segoe UI',sans-serif;color:#7b8496}@bottom-left{content:'Monitor de IPs · Informe de disponibilidad';font:8.5pt 'Segoe UI',sans-serif;color:#7b8496}}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;font:9.5pt/1.45 'Segoe UI',system-ui,sans-serif;color:#121826}
+@media screen{body{max-width:900px;margin:28px auto;padding:0 24px}}
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding-bottom:12px;border-bottom:2px solid #4a67f5;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:12px}
 .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#4a67f5,#7c5cf0);display:flex;align-items:center;justify-content:center;flex:none}
@@ -335,9 +321,9 @@ h2{font-size:11.5pt;margin:0 0 8px;font-weight:700}
 .ok{color:#15803d !important}.warn{color:#b45309 !important}.bad{color:#be123c !important}
 .chart{width:100%;height:auto;display:block}
 .chart .ax{font:7.5pt 'Segoe UI',sans-serif;fill:#7b8496}
-.chart .ax.ok{fill:#15803d}
 .legend{display:flex;gap:14px;font-size:7.5pt;color:#4b5567;margin-top:4px}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.legend b.goal{display:inline-block;width:16px;border-top:1.5px dashed #15803d;margin-right:5px;vertical-align:3px}
 .tbl{width:100%;border-collapse:collapse;font-size:8.5pt}
 .tbl th{text-align:left;font-size:7.5pt;text-transform:uppercase;letter-spacing:.05em;color:#4b5567;font-weight:650;border-bottom:1.5px solid #cfd6e2;padding:5px 6px}
 .tbl td{border-bottom:1px solid #e9edf3;padding:5px 6px;vertical-align:middle}

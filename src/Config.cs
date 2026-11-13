@@ -462,6 +462,30 @@ namespace MonitorIPs
             catch { return null; }
         }
 
+        /// <summary>Escapa texto para HTML (informe PDF y mensajes de Telegram).</summary>
+        public static string Html(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#39;");
+        }
+
+        /// <summary>Duración legible: "12 s", "4 min 12 s", "2 h", "1 h 5 min", "3 d 4 h" (omite las unidades a cero).</summary>
+        public static string FormatDuration(double seconds)
+        {
+            var t = TimeSpan.FromSeconds(Math.Max(0, seconds));
+            if (t.TotalDays >= 1) return (int)t.TotalDays + " d" + (t.Hours > 0 ? " " + t.Hours + " h" : "");
+            if (t.TotalHours >= 1) return (int)t.TotalHours + " h" + (t.Minutes > 0 ? " " + t.Minutes + " min" : "");
+            if (t.TotalMinutes >= 1) return t.Minutes + " min" + (t.Seconds > 0 ? " " + t.Seconds + " s" : "");
+            return t.Seconds + " s";
+        }
+
+        /// <summary>Variable de entorno para pruebas (MONITORIPS_NOPDF, MONITORIPS_TG_API); null si no está definida.</summary>
+        public static string TestHook(string name)
+        {
+            string v = Environment.GetEnvironmentVariable("MONITORIPS_" + name);
+            return string.IsNullOrEmpty(v) ? null : v;
+        }
+
         public static string EventLabel(string type)
         {
             switch (type)

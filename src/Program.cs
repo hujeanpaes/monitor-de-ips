@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.10.0.0")]
-[assembly: AssemblyFileVersion("1.10.0.0")]
+[assembly: AssemblyVersion("1.10.1.0")]
+[assembly: AssemblyFileVersion("1.10.1.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.10.0";
+        const string Version = "1.10.1";
         static string token;
         static int port;
         static HttpListener listener;
@@ -33,7 +33,7 @@ namespace MonitorIPs
         static TrayApp tray;
         static bool trayMode;          // arrancado con --tray (inicio con Windows): sin abrir ventana
         static bool windowWasOpen;     // para detectar el cierre de la ventana
-        static int trayAlerts;         // avisos mostrados desde la bandeja (diagnóstico, visible en Ajustes/API)
+        static int trayAlerts;         // avisos mostrados desde la bandeja (diagnóstico, en /api/settings)
         static string htmlTemplate;
         static byte[] favicon;
         static readonly JavaScriptSerializer json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
@@ -151,7 +151,7 @@ namespace MonitorIPs
             if (ev.Type == "down")
                 tray.Post(() => tray.ShowAlert("⚠ " + name + " sin respuesta", ev.Host + (string.IsNullOrEmpty(ev.Detail) ? "" : " · " + ev.Detail), true));
             else
-                tray.Post(() => tray.ShowAlert("✔ " + name + " recuperada", ev.Host + " · estuvo caída " + Duration(ev.Duration), false));
+                tray.Post(() => tray.ShowAlert("✔ " + name + " recuperada", ev.Host + " · estuvo caída " + Util.FormatDuration(ev.Duration), false));
         }
 
         /// <summary>Versión nueva encontrada: con la ventana cerrada se avisa desde la bandeja (una vez por versión).</summary>
@@ -160,14 +160,6 @@ namespace MonitorIPs
             if (tray == null || WindowOpen()) return; // con la ventana abierta lo muestra la franja de la UI
             tray.Post(() => tray.ShowAlert("Nueva versión disponible: " + info.Version,
                 "Abre el monitor para ver las novedades y descargarla.", false));
-        }
-
-        static string Duration(double seconds)
-        {
-            var t = TimeSpan.FromSeconds(Math.Max(0, seconds));
-            if (t.TotalHours >= 1) return (int)t.TotalHours + "h " + t.Minutes + "m";
-            if (t.TotalMinutes >= 1) return t.Minutes + "m " + t.Seconds + "s";
-            return t.Seconds + "s";
         }
 
         internal static void OpenOrFocusWindow() { if (!WindowFocus.TryFocus()) OpenWindow(port); }
@@ -674,7 +666,7 @@ namespace MonitorIPs
                 PeriodLabel = label,
                 Scope = group == null ? "Todas las comprobaciones" : (group == "" ? "Sin grupo" : "Grupo «" + group + "»"),
                 Version = Version, OutDir = Store.ExportsDir,
-                Browser = Environment.GetEnvironmentVariable("MONITORIPS_NOPDF") == "1" ? null : FindBrowser(),   // la variable permite probar el plan B (HTML)
+                Browser = Util.TestHook("NOPDF") == "1" ? null : FindBrowser(),   // la variable permite probar el plan B (HTML)
                 FileBase = "informe_" + tag + "_" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss"),
                 FromMin = from, ToMin = to, Daily = daily, Targets = targets, DownNow = engine.IsDown,
             });
