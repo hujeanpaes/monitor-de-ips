@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.3.1.0")]
-[assembly: AssemblyFileVersion("1.3.1.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.3.1";
+        const string Version = "1.4.0";
         static string token;
         static int port;
         static HttpListener listener;
