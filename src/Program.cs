@@ -72,6 +72,7 @@ namespace MonitorIPs
                 engine.Start();
                 History.Start(Store.HistoryDir, () => config.HistoryDays);
                 Updater.Start(Version, config, OnNewVersion);
+                TelegramNotifier.Start(config, engine.IsDown);
                 Autostart.RepairPath();
                 tray = new TrayApp();
                 if (!trayMode) OpenWindow(port);
@@ -130,7 +131,20 @@ namespace MonitorIPs
         /// <summary>Con la ventana cerrada, las caídas y recuperaciones se avisan desde la bandeja.</summary>
         static void OnEngineEvent(MonitorEvent ev)
         {
-            if ((ev.Type != "down" && ev.Type != "up" && ev.Type != "cert") || tray == null || WindowOpen()) return;
+            if (ev.Type != "down" && ev.Type != "up" && ev.Type != "cert") return;
+            // Telegram: siempre, con la ventana abierta o cerrada
+            try
+            {
+                var c = engine.ConfigOf(ev.TargetId);
+                TelegramNotifier.Enqueue(new TelegramNotifier.Item {
+                    Type = ev.Type, Id = ev.TargetId, Name = string.IsNullOrEmpty(ev.Name) ? ev.Host : ev.Name,
+                    Sub = c == null ? ev.Host : c.Check == "http" ? c.Url : c.Check == "tcp" ? c.Host + ":" + c.Port : c.Host,
+                    Kind = c == null ? "" : c.Check == "http" ? "Web" : c.Check == "tcp" ? "TCP" : "Ping", Group = c == null ? "" : c.Group,
+                    Detail = ev.Detail, T = ev.T, Duration = ev.Duration,
+                });
+            }
+            catch { }
+            if (tray == null || WindowOpen()) return;
             Interlocked.Increment(ref trayAlerts);
             string name = string.IsNullOrEmpty(ev.Name) ? ev.Host : ev.Name;
             if (ev.Type == "cert") { tray.Post(() => tray.ShowAlert("Certificado por caducar: " + name, ev.Host + " · " + ev.Detail, false)); return; }
@@ -402,6 +416,30 @@ namespace MonitorIPs
                     return new Dictionary<string, object> { { "path", Export(Str(b, "kind"), Str(b, "range")) } };
                 case "/api/report":
                     return MakeReport(b);
+                case "/api/telegram":
+                    return TelegramNotifier.Status();
+                case "/api/telegram/token":
+                {
+                    string tk = Str(b, "token").Trim();
+                    string bot = TelegramNotifier.GetMe(tk);           // lanza con el motivo si no vale
+                    config.TelegramTokenEnc = TelegramNotifier.Protect(tk);
+                    config.TelegramBot = bot;
+                    Store.Save(config);
+                    TelegramNotifier.ResetState();
+                    return TelegramNotifier.Status();
+                }
+                case "/api/telegram/forget":
+                    config.TelegramTokenEnc = ""; config.TelegramBot = ""; config.TelegramEnabled = false;
+                    Store.Save(config);
+                    TelegramNotifier.ResetState();
+                    return TelegramNotifier.Status();
+                case "/api/telegram/detect":
+                    return new Dictionary<string, object> { { "chats", TelegramNotifier.DetectChats() } };
+                case "/api/telegram/test":
+                    return TelegramNotifier.SendTest(b.ContainsKey("chats") ? Chats(b["chats"]) : null);
+                case "/api/telegram/save":
+                    SaveTelegram(b);
+                    return TelegramNotifier.Status();
                 case "/api/update":
                     return Updater.Status();
                 case "/api/update/check":
@@ -425,6 +463,7 @@ namespace MonitorIPs
                 case "/api/open":
                 {
                     string kind = Str(b, "kind");
+                    if (kind == "botfather") { Process.Start("https://t.me/BotFather"); return Ok(); }   // enlace fijo, nunca una URL recibida
                     string dir = kind == "logs" ? Store.LogsDir : kind == "exports" ? Store.ExportsDir : Store.DataDir;
                     Directory.CreateDirectory(dir);
                     Process.Start("explorer.exe", "\"" + dir + "\"");
@@ -458,6 +497,7 @@ namespace MonitorIPs
                 { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() }, { "updateCheck", config.UpdateCheck },
                 { "view", config.View }, { "listSort", config.ListSort }, { "screenMode", config.ScreenMode },
                 { "reportTitle", config.ReportTitle },
+                { "telegram", new Dictionary<string, object> { { "enabled", config.TelegramEnabled }, { "chats", config.TelegramChats.Count }, { "bot", config.TelegramBot } } },
             };
         }
 
@@ -640,6 +680,46 @@ namespace MonitorIPs
             });
             if (!b.ContainsKey("open") || Bool(b, "open")) try { Process.Start(res.Path); } catch { }
             return new Dictionary<string, object> { { "path", res.Path }, { "pdf", res.Pdf } };
+        }
+
+        static List<TelegramChat> Chats(object o)
+        {
+            var res = new List<TelegramChat>();
+            var list = o as System.Collections.IEnumerable;
+            if (list == null) return res;
+            foreach (var x in list.OfType<Dictionary<string, object>>())
+            {
+                string id = Str(x, "id"); if (id == "") id = Str(x, "Id");
+                string name = Str(x, "name"); if (name == "") name = Str(x, "Name");
+                if (System.Text.RegularExpressions.Regex.IsMatch(id, @"^-?\d{1,20}$")) res.Add(new TelegramChat { Id = id, Name = name.Length > 80 ? name.Substring(0, 80) : name });
+            }
+            return res;
+        }
+
+        static void SaveTelegram(Dictionary<string, object> b)
+        {
+            if (b.ContainsKey("chats")) config.TelegramChats = Chats(b["chats"]);
+            if (b.ContainsKey("down")) config.TelegramDown = Bool(b, "down");
+            if (b.ContainsKey("up")) config.TelegramUp = Bool(b, "up");
+            if (b.ContainsKey("cert")) config.TelegramCert = Bool(b, "cert");
+            if (b.ContainsKey("minDown")) config.TelegramMinDownMin = (int)Num(b, "minDown", 0);
+            if (b.ContainsKey("allGroups")) config.TelegramAllGroups = Bool(b, "allGroups");
+            if (b.ContainsKey("groups"))
+            {
+                var g = b["groups"] as System.Collections.IEnumerable;
+                config.TelegramGroups = g == null ? new List<string>() : g.Cast<object>().Select(x => Convert.ToString(x) ?? "").Distinct().ToList();
+            }
+            if (b.ContainsKey("quietFrom")) config.TelegramQuietFrom = Str(b, "quietFrom");
+            if (b.ContainsKey("quietTo")) config.TelegramQuietTo = Str(b, "quietTo");
+            if (b.ContainsKey("enabled"))
+            {
+                bool on = Bool(b, "enabled");
+                if (on && (string.IsNullOrEmpty(config.TelegramTokenEnc) || config.TelegramChats.Count == 0))
+                    throw new Exception("Para activar los avisos conecta el bot y elige al menos un chat.");
+                config.TelegramEnabled = on;
+            }
+            config.Normalize();
+            Store.Save(config);
         }
 
         static string Cap(string s) { return string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s.Substring(1); }

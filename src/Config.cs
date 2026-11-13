@@ -139,6 +139,13 @@ namespace MonitorIPs
         public long DeletedAt { get; set; } // unix ms
     }
 
+    /// <summary>Chat de Telegram que recibe los avisos (privado o grupo).</summary>
+    public class TelegramChat
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
+
     public class AppConfig
     {
         public const int TrashDays = 30;
@@ -170,6 +177,25 @@ namespace MonitorIPs
         /// <summary>Último título usado en el informe PDF.</summary>
         public string ReportTitle { get; set; }
 
+        // ---- avisos por Telegram
+        public bool TelegramEnabled { get; set; }
+        /// <summary>Token del bot cifrado con DPAPI (usuario actual de Windows), en base64. Nunca en claro.</summary>
+        public string TelegramTokenEnc { get; set; }
+        /// <summary>Nombre del bot (@usuario), sólo para mostrarlo.</summary>
+        public string TelegramBot { get; set; }
+        public List<TelegramChat> TelegramChats { get; set; }
+        public bool TelegramDown { get; set; }
+        public bool TelegramUp { get; set; }
+        public bool TelegramCert { get; set; }
+        /// <summary>Sólo avisar si la caída dura al menos estos minutos (0 = al instante).</summary>
+        public int TelegramMinDownMin { get; set; }
+        public bool TelegramAllGroups { get; set; }
+        /// <summary>Grupos que avisan cuando TelegramAllGroups es false ("" = sin grupo).</summary>
+        public List<string> TelegramGroups { get; set; }
+        /// <summary>Horas de silencio "HH:mm" (vacío = sin silencio): los avisos llegan sin sonido.</summary>
+        public string TelegramQuietFrom { get; set; }
+        public string TelegramQuietTo { get; set; }
+
         public AppConfig()
         {
             Targets = new List<TargetConfig>();
@@ -188,6 +214,18 @@ namespace MonitorIPs
             View = "cards";
             ListSort = "";
             ReportTitle = "";
+            TelegramTokenEnc = ""; TelegramBot = "";
+            TelegramChats = new List<TelegramChat>();
+            TelegramDown = true; TelegramUp = true; TelegramCert = true;
+            TelegramAllGroups = true; TelegramGroups = new List<string>();
+            TelegramQuietFrom = ""; TelegramQuietTo = "";
+        }
+
+        public static bool IsHhMm(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            var p = s.Split(':'); int h, m;
+            return p.Length == 2 && int.TryParse(p[0], out h) && int.TryParse(p[1], out m) && h >= 0 && h < 24 && m >= 0 && m < 60;
         }
 
         public void Normalize()
@@ -205,6 +243,14 @@ namespace MonitorIPs
             if (HistoryDays > 365) HistoryDays = 365;
             if (Theme != "light") Theme = "dark";
             if (View != "list") View = "cards";
+            if (TelegramTokenEnc == null) TelegramTokenEnc = "";
+            if (TelegramBot == null) TelegramBot = "";
+            if (TelegramChats == null) TelegramChats = new List<TelegramChat>();
+            TelegramChats = TelegramChats.Where(c => c != null && !string.IsNullOrWhiteSpace(c.Id)).ToList();
+            if (TelegramGroups == null) TelegramGroups = new List<string>();
+            if (TelegramMinDownMin < 0) TelegramMinDownMin = 0;
+            if (TelegramMinDownMin > 1440) TelegramMinDownMin = 1440;
+            if (!IsHhMm(TelegramQuietFrom) || !IsHhMm(TelegramQuietTo)) { TelegramQuietFrom = ""; TelegramQuietTo = ""; }
             if (ListSort == null || !System.Text.RegularExpressions.Regex.IsMatch(ListSort, "^(name|lat|state|loss):(asc|desc)$")) ListSort = "";
             foreach (var t in Targets)
             {

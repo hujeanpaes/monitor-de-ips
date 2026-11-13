@@ -62,7 +62,7 @@ New-Item -ItemType Directory -Force $stage | Out-Null
 Step "Compilando Monitor de IPs $version"
 $exe = Join-Path $stage 'MonitorIPs.exe'
 & $csc /nologo /warn:4 /target:winexe /optimize+ /platform:anycpu "/out:$exe" '/win32icon:src\app.ico' `
-    /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll `
+    /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll /r:System.Security.dll `
     '/resource:src\web\index.html,index.html' '/resource:src\app.ico,app.ico' 'src\*.cs'
 if ($LASTEXITCODE -ne 0) { throw 'Error de compilacion' }
 
