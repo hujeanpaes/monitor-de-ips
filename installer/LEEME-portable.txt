@@ -16,4 +16,8 @@ DATOS
 REQUISITOS
 Windows 10 u 11 (incluyen .NET Framework 4 y Microsoft Edge).
 
+LICENCIA
+MIT (ver LICENCIA.txt): puedes usarlo, copiarlo y modificarlo libremente
+citando el aviso de copyright.
+
 Proyecto: https://github.com/hujeanpaes/monitor-de-ips

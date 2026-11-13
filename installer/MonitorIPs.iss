@@ -44,6 +44,7 @@ CloseApplications=yes
 
 OutputDir={#OutputDir}
 OutputBaseFilename=MonitorIPs-{#AppVersion}-Setup
+LicenseFile=..\LICENSE
 SetupIconFile=..\src\app.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
@@ -74,6 +75,7 @@ Source: "{#SourceExe}";       DestDir: "{app}"; Flags: ignoreversion
 Source: "installed.mode";     DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md";       DestDir: "{app}"; Flags: ignoreversion
 Source: "..\CHANGELOG.md";    DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE";         DestDir: "{app}"; DestName: "LICENCIA.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}";               Filename: "{app}\{#AppExe}"

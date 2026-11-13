@@ -77,6 +77,8 @@ New-Item -ItemType Directory -Force $zipDir | Out-Null
 Copy-Item $exe $zipDir
 $leeme = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'installer\LEEME-portable.txt'), $utf8NoBom)
 [IO.File]::WriteAllText((Join-Path $zipDir 'LEEME.txt'), ($leeme -replace "`r?`n", "`r`n"), $utf8Bom)
+$lic = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'LICENSE'), $utf8NoBom)
+[IO.File]::WriteAllText((Join-Path $zipDir 'LICENCIA.txt'), ($lic -replace "`r?`n", "`r`n"), $utf8NoBom)
 Compress-Archive -Path (Join-Path $zipDir '*') -DestinationPath (Join-Path $out "$base-Portable.zip")
 
 Step 'Instalador (Inno Setup)'
