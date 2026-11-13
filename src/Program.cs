@@ -63,6 +63,7 @@ namespace MonitorIPs
                 config = Store.Load();
                 Store.Save(config);
                 LoadResources();
+                Probes.Init(Version);
                 token = Guid.NewGuid().ToString("N");
                 StartServer();
                 File.WriteAllText(PortFile, port.ToString());
@@ -128,9 +129,10 @@ namespace MonitorIPs
         /// <summary>Con la ventana cerrada, las caídas y recuperaciones se avisan desde la bandeja.</summary>
         static void OnEngineEvent(MonitorEvent ev)
         {
-            if ((ev.Type != "down" && ev.Type != "up") || tray == null || WindowOpen()) return;
+            if ((ev.Type != "down" && ev.Type != "up" && ev.Type != "cert") || tray == null || WindowOpen()) return;
             Interlocked.Increment(ref trayAlerts);
             string name = string.IsNullOrEmpty(ev.Name) ? ev.Host : ev.Name;
+            if (ev.Type == "cert") { tray.Post(() => tray.ShowAlert("Certificado por caducar: " + name, ev.Host + " · " + ev.Detail, false)); return; }
             if (ev.Type == "down")
                 tray.Post(() => tray.ShowAlert("⚠ " + name + " sin respuesta", ev.Host + (string.IsNullOrEmpty(ev.Detail) ? "" : " · " + ev.Detail), true));
             else
@@ -304,7 +306,9 @@ namespace MonitorIPs
                     Interlocked.Exchange(ref byeAt, Util.NowMs() + 1);
                     return Ok();
                 case "/api/targets/save":
-                    return engine.AddOrUpdate(Str(b, "id"), Str(b, "name"), Str(b, "host"), Str(b, "group"), (int)(Num(b, "interval", 1) * 1000));
+                    return engine.AddOrUpdate(Str(b, "id"), SpecFrom(b));
+                case "/api/ports/detect":
+                    return new Dictionary<string, object> { { "open", Probes.DetectPorts(Str(b, "host")) }, { "tested", Ports.Common.Length } };
                 case "/api/targets/bulk":
                     return new Dictionary<string, object> { { "added", Bulk(Str(b, "text"), Str(b, "group"), (int)(Num(b, "interval", 1) * 1000)) } };
                 case "/api/targets/delete":
@@ -337,7 +341,7 @@ namespace MonitorIPs
                     {
                         var d = o as Dictionary<string, object>;
                         if (d == null) continue;
-                        if (TryAdd(Str(d, "host"), Str(d, "name"), group, interval)) added++; else skipped++;
+                        if (TryAdd(new TargetConfig { Host = Str(d, "host"), Name = Str(d, "name"), Group = group, IntervalMs = interval })) added++; else skipped++;
                     }
                     if (added > 0) engine.SaveConfig();
                     return new Dictionary<string, object> { { "added", added }, { "skipped", skipped } };
@@ -444,17 +448,16 @@ namespace MonitorIPs
                 if (line.Length == 0 || line.StartsWith("#")) continue;
                 string host, name = "";
                 var parts = line.Split(new[] { ';', ',', '\t' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).Where(s => s.Length > 0).ToArray();
-                IPAddress tmp;
                 if (parts.Length >= 2)
                 {
-                    if (!IPAddress.TryParse(parts[0], out tmp) && IPAddress.TryParse(parts[1], out tmp)) { host = parts[1]; name = parts[0]; }
+                    if (!LooksLikeTarget(parts[0]) && LooksLikeTarget(parts[1])) { host = parts[1]; name = parts[0]; }
                     else { host = parts[0]; name = parts[1]; }
                 }
                 else
                 {
                     var m = System.Text.RegularExpressions.Regex.Match(line, @"\b\d{1,3}(\.\d{1,3}){3}\b");
                     var ws = line.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                    if (IPAddress.TryParse(ws[0], out tmp) || !m.Success) { host = ws[0]; name = ws.Length > 1 ? ws[1].Trim() : ""; }
+                    if (LooksLikeTarget(ws[0]) || !m.Success) { host = ws[0]; name = ws.Length > 1 ? ws[1].Trim() : ""; }
                     else
                     {
                         host = m.Value;
@@ -462,17 +465,63 @@ namespace MonitorIPs
                         name = pingOutput ? "" : line.Replace(m.Value, "").Trim(' ', '-', ':', '|');
                     }
                 }
-                if (TryAdd(host, name, group, interval)) added++;
+                if (TryAdd(SpecFromToken(host, name, group, interval))) added++;
             }
             if (added > 0) engine.SaveConfig();
             return added;
         }
 
-        /// <summary>Alta sin guardar (las altas en bloque guardan una vez al final). Omite hosts ya monitoreados.</summary>
-        static bool TryAdd(string host, string name, string group, int interval)
+        static bool IsUrl(string s) { return s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || s.StartsWith("https://", StringComparison.OrdinalIgnoreCase); }
+
+        /// <summary>"host:puerto" (no IPv6) → (host, puerto); si no, null.</summary>
+        static Tuple<string, int> HostPort(string s)
         {
-            if (string.IsNullOrWhiteSpace(host) || engine.HasHost(host)) return false;
-            try { engine.AddOrUpdate(null, name, host, group, interval, false); return true; }
+            int i = s.LastIndexOf(':'), p;
+            if (i > 0 && s.IndexOf(':') == i && int.TryParse(s.Substring(i + 1), out p) && p > 0 && p < 65536) return Tuple.Create(s.Substring(0, i), p);
+            return null;
+        }
+
+        static bool LooksLikeTarget(string s) { IPAddress a; return IsUrl(s) || HostPort(s) != null || IPAddress.TryParse(s, out a); }
+
+        /// <summary>Convierte un texto pegado en una comprobación: URL → web, host:puerto → TCP, si no → ping.</summary>
+        static TargetConfig SpecFromToken(string token, string name, string group, int interval)
+        {
+            var s = new TargetConfig { Name = name, Group = group, IntervalMs = interval };
+            var hp = HostPort(token);
+            if (IsUrl(token)) { s.Check = "http"; s.Url = token; if (interval <= 1000) s.IntervalMs = 30000; }
+            else if (hp != null) { s.Check = "tcp"; s.Host = hp.Item1; s.Port = hp.Item2; if (interval <= 1000) s.IntervalMs = 10000; }
+            else s.Host = token;
+            return s;
+        }
+
+        /// <summary>Comprobación a partir del cuerpo de /api/targets/save (intervalo en segundos).</summary>
+        static TargetConfig SpecFrom(Dictionary<string, object> b)
+        {
+            string check = Str(b, "check");
+            if (check != "tcp" && check != "http") check = "ping";
+            double defInterval = check == "http" ? 30 : check == "tcp" ? 10 : 1;
+            return new TargetConfig
+            {
+                Name = Str(b, "name"), Host = Str(b, "host"), Group = Str(b, "group"),
+                IntervalMs = (int)(Num(b, "interval", defInterval) * 1000),
+                Check = check, Port = (int)Num(b, "port", 0), Url = Str(b, "url"),
+                Expect = Str(b, "expect"), Keyword = Str(b, "keyword"),
+                Insecure = !b.ContainsKey("insecure") || Bool(b, "insecure"),
+                TimeoutMs = (int)Num(b, "timeoutMs", 0),
+            };
+        }
+
+        /// <summary>Alta sin guardar (las altas en bloque guardan una vez al final). Omite hosts ya monitoreados.</summary>
+        static bool TryAdd(TargetConfig spec)
+        {
+            try
+            {
+                if (spec.Check != "http" && string.IsNullOrWhiteSpace(spec.Host)) return false;
+                spec.NormalizeCheck();
+                if (engine.HasKey(spec.Key)) return false;
+                engine.AddOrUpdate(null, spec, false);
+                return true;
+            }
             catch { return false; }
         }
 
@@ -488,6 +537,7 @@ namespace MonitorIPs
             {
                 var d = new Dictionary<string, object>(stats[(string)t["id"]]);
                 d["id"] = t["id"]; d["name"] = t["name"]; d["host"] = t["host"]; d["group"] = t["group"]; d["state"] = t["state"];
+                d["label"] = t["label"]; d["check"] = t["check"]; d["url"] = t["url"];
                 return d;
             }).ToList();
         }
@@ -501,12 +551,12 @@ namespace MonitorIPs
             if (kind == "samples")
             {
                 file = "latencias_" + stamp + ".csv";
-                sb.AppendLine("Fecha;Hora;Nombre;Host;Grupo;Latencia_ms;TTL;Resultado");
+                sb.AppendLine("Fecha;Hora;Nombre;Host;Comprobacion;Grupo;Latencia_ms;TTL_o_HTTP;Resultado");
                 foreach (var kv in engine.AllSamples())
                     foreach (var s in kv.Value)
                     {
                         var d = Util.FromUnixMs(s[1]);
-                        sb.AppendLine(Util.Csv(d.ToString("yyyy-MM-dd"), d.ToString("HH:mm:ss.fff"), kv.Key.Name, kv.Key.Host, kv.Key.Group,
+                        sb.AppendLine(Util.Csv(d.ToString("yyyy-MM-dd"), d.ToString("HH:mm:ss.fff"), kv.Key.Name, kv.Key.Check == "http" ? kv.Key.Url : kv.Key.Host, kv.Key.CheckLabel, kv.Key.Group,
                             s[2] >= 0 ? s[2].ToString() : "", s[2] >= 0 ? s[3].ToString() : "", s[2] >= 0 ? "OK" : "SIN RESPUESTA"));
                     }
             }
@@ -514,17 +564,17 @@ namespace MonitorIPs
             {
                 range = Range(range);
                 file = "disponibilidad_" + range + "_" + stamp + ".csv";
-                sb.AppendLine("Nombre;Host;Grupo;Disponibilidad_%;Caidas;Tiempo_caido_min;Caida_mas_larga_min;Latencia_media_ms;Latencia_max_ms;Perdida_%;Minutos_vigilados;Periodo");
+                sb.AppendLine("Nombre;Host;Comprobacion;Grupo;Disponibilidad_%;Caidas;Tiempo_caido_min;Caida_mas_larga_min;Latencia_media_ms;Latencia_max_ms;Perdida_%;Minutos_vigilados;Periodo");
                 foreach (var t in Availability(range))
-                    sb.AppendLine(Util.Csv(t["name"], t["host"], t["group"], t["availability"] ?? "", t["outages"], t["downtime"], t["longest"],
+                    sb.AppendLine(Util.Csv(t["name"], (string)t["check"] == "http" ? t["url"] : t["host"], t["label"], t["group"], t["availability"] ?? "", t["outages"], t["downtime"], t["longest"],
                         Neg(t["avg"]), Neg(t["max"]), t["loss"], t["minutes"], RangeLabel(range)));
             }
             else if (kind == "summary")
             {
                 file = "resumen_" + stamp + ".csv";
-                sb.AppendLine("Nombre;Host;Grupo;Estado;Enviados;Recibidos;Perdida_%;Min_ms;Prom_ms;Max_ms;Jitter_ms");
+                sb.AppendLine("Nombre;Host;Comprobacion;Grupo;Estado;Enviados;Recibidos;Perdida_%;Min_ms;Prom_ms;Max_ms;Jitter_ms");
                 foreach (var t in engine.SummaryAll())
-                    sb.AppendLine(Util.Csv(t["name"], t["host"], t["group"], StateLabel((string)t["state"]), t["sent"], t["recv"], t["loss"],
+                    sb.AppendLine(Util.Csv(t["name"], (string)t["check"] == "http" ? t["url"] : t["host"], t["label"], t["group"], StateLabel((string)t["state"]), t["sent"], t["recv"], t["loss"],
                         Neg(t["min"]), Neg(t["avg"]), Neg(t["max"]), t["jitter"]));
             }
             else

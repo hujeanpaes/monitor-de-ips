@@ -16,6 +16,22 @@ namespace MonitorIPs
         public int IntervalMs { get; set; }
         public bool Paused { get; set; }
 
+        // ---- tipo de comprobación (v1.6). Las configuraciones antiguas quedan como "ping".
+        /// <summary>"ping" | "tcp" | "http"</summary>
+        public string Check { get; set; }
+        /// <summary>Puerto para "tcp".</summary>
+        public int Port { get; set; }
+        /// <summary>URL completa para "http" (http:// o https://). Host guarda su nombre de equipo.</summary>
+        public string Url { get; set; }
+        /// <summary>Códigos HTTP válidos, p. ej. "200-399" o "200,301-302".</summary>
+        public string Expect { get; set; }
+        /// <summary>Texto que debe aparecer en la respuesta web (opcional).</summary>
+        public string Keyword { get; set; }
+        /// <summary>Aceptar certificados HTTPS no válidos (equipos internos con certificado propio).</summary>
+        public bool Insecure { get; set; }
+        /// <summary>Tiempo de espera propio en ms; 0 = predeterminado según el tipo.</summary>
+        public int TimeoutMs { get; set; }
+
         public TargetConfig()
         {
             Id = Guid.NewGuid().ToString("N").Substring(0, 10);
@@ -23,6 +39,89 @@ namespace MonitorIPs
             Host = "";
             Group = "";
             IntervalMs = 1000;
+            Check = "ping";
+            Url = "";
+            Expect = "200-399";
+            Keyword = "";
+            Insecure = true;
+        }
+
+        /// <summary>Corrige valores y deja Host coherente con la URL. Lanza ArgumentException si no es válido.</summary>
+        public void NormalizeCheck()
+        {
+            Check = (Check ?? "ping").Trim().ToLowerInvariant();
+            if (Check != "tcp" && Check != "http") Check = "ping";
+            if (Name == null) Name = "";
+            if (Group == null) Group = "";
+            if (Keyword == null) Keyword = "";
+            if (string.IsNullOrWhiteSpace(Expect)) Expect = "200-399";
+            if (TimeoutMs < 0) TimeoutMs = 0;
+            if (TimeoutMs > 60000) TimeoutMs = 60000;
+            if (Check == "http")
+            {
+                Uri u;
+                string url = (Url ?? "").Trim();
+                if (url.Length > 0 && url.IndexOf("://", StringComparison.Ordinal) < 0) url = "http://" + url;
+                if (!Uri.TryCreate(url, UriKind.Absolute, out u) || (u.Scheme != "http" && u.Scheme != "https"))
+                    throw new ArgumentException("URL no válida (usa http://… o https://…)");
+                Url = u.ToString();
+                Host = u.Host;
+                Port = u.Port;
+                if (IntervalMs < 5000) IntervalMs = 5000;
+            }
+            else
+            {
+                Url = Url ?? "";
+                if (Check == "tcp")
+                {
+                    if (Port < 1 || Port > 65535) throw new ArgumentException("Puerto no válido (1-65535)");
+                    if (IntervalMs < 2000) IntervalMs = 2000;
+                }
+                else Port = 0;
+            }
+        }
+
+        /// <summary>Clave para detectar duplicados: el mismo host puede tener ping y varios puertos.</summary>
+        [ScriptIgnore]
+        public string Key
+        {
+            get
+            {
+                if (Check == "http") return "http|" + (Url ?? "").ToLowerInvariant();
+                if (Check == "tcp") return "tcp|" + (Host ?? "").ToLowerInvariant() + "|" + Port;
+                return "ping|" + (Host ?? "").ToLowerInvariant();
+            }
+        }
+
+        /// <summary>Descripción corta: "Ping", "RDP 3389", "HTTPS".</summary>
+        [ScriptIgnore]
+        public string CheckLabel
+        {
+            get
+            {
+                if (Check == "http") return Url.StartsWith("https", StringComparison.OrdinalIgnoreCase) ? "HTTPS" : "HTTP";
+                if (Check == "tcp") { string n = Ports.Name(Port); return n == null ? "TCP " + Port : n + " " + Port; }
+                return "Ping";
+            }
+        }
+    }
+
+    /// <summary>Puertos TCP conocidos (nombres para mostrar y lista de detección).</summary>
+    public static class Ports
+    {
+        public static readonly int[] Common = { 21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 1433, 3306, 3389, 5432, 5900, 8080, 8443, 9100 };
+
+        public static string Name(int port)
+        {
+            switch (port)
+            {
+                case 21: return "FTP"; case 22: return "SSH"; case 23: return "Telnet"; case 25: return "SMTP";
+                case 53: return "DNS"; case 80: return "HTTP"; case 110: return "POP3"; case 135: return "RPC";
+                case 139: return "NetBIOS"; case 143: return "IMAP"; case 443: return "HTTPS"; case 445: return "SMB";
+                case 1433: return "SQL Server"; case 3306: return "MySQL"; case 3389: return "RDP"; case 5432: return "PostgreSQL";
+                case 5900: return "VNC"; case 8080: return "HTTP-alt"; case 8443: return "HTTPS-alt"; case 9100: return "Impresora";
+                default: return null;
+            }
         }
     }
 
@@ -88,6 +187,7 @@ namespace MonitorIPs
                 if (t.Host == null) t.Host = "";
                 if (t.IntervalMs < 250) t.IntervalMs = 250;
                 if (t.IntervalMs > 600000) t.IntervalMs = 600000;
+                try { t.NormalizeCheck(); } catch { t.Check = "ping"; t.Port = 0; } // dato corrupto: se vigila por ping
             }
         }
 

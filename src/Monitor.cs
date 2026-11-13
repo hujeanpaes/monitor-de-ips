@@ -33,6 +33,10 @@ namespace MonitorIPs
         public long Sent, Recv;
         public int LastMs = -2;
         public string LastError;
+        public string ErrShort;           // causa breve del último fallo (tarjeta)
+        public DateTime? CertExpires;     // HTTPS: caducidad del certificado
+        public string CertSubject;
+        public DateTime CertWarnDay;      // último día en que se avisó de la caducidad
         public int Epoch;
         public volatile bool Stop;
         public readonly AutoResetEvent Wake = new AutoResetEvent(false);
@@ -74,7 +78,6 @@ namespace MonitorIPs
         readonly List<TargetRuntime> targets = new List<TargetRuntime>();
         readonly List<MonitorEvent> events = new List<MonitorEvent>();
         long seq, evSeq;
-        static readonly PingOptions PingOpts = new PingOptions(128, false);
 
         public MonitorEngine(AppConfig cfg) { this.cfg = cfg; }
 
@@ -107,29 +110,34 @@ namespace MonitorIPs
         // ---------- operaciones (llamadas desde la API) ----------
 
         /// <summary>Añade (id vacío) o edita una IP. save=false para altas en bloque (se guarda una vez al final).</summary>
-        public TargetConfig AddOrUpdate(string id, string name, string host, string group, int intervalMs, bool save = true)
+        public TargetConfig AddOrUpdate(string id, TargetConfig spec, bool save = true)
         {
-            host = (host ?? "").Trim();
-            if (host.Length == 0 || host.Length > 253 || host.Contains(" ")) throw new ArgumentException("IP o nombre de host no válido");
-            if (intervalMs < 250) intervalMs = 250;
+            spec.Name = (spec.Name ?? "").Trim();
+            spec.Group = (spec.Group ?? "").Trim();
+            spec.Host = (spec.Host ?? "").Trim();
+            if (spec.IntervalMs < 250) spec.IntervalMs = 250;
+            spec.NormalizeCheck();
+            if (spec.Host.Length == 0 || spec.Host.Length > 253 || spec.Host.Contains(" ")) throw new ArgumentException("IP o nombre de host no válido");
             TargetConfig result;
             lock (targets)
             {
                 var rt = string.IsNullOrEmpty(id) ? null : Find(id);
+                if (targets.Any(x => x != rt && x.Cfg.Key == spec.Key)) throw new ArgumentException("Esa comprobación ya está en el monitor");
                 if (rt != null)
                 {
-                    bool hostChanged = !string.Equals(rt.Cfg.Host, host, StringComparison.OrdinalIgnoreCase);
-                    rt.Cfg.Name = (name ?? "").Trim();
-                    rt.Cfg.Group = (group ?? "").Trim();
-                    rt.Cfg.IntervalMs = intervalMs;
-                    rt.Cfg.Host = host;
-                    if (hostChanged) rt.Reset();
+                    bool changed = rt.Cfg.Key != spec.Key;
+                    var c = rt.Cfg;
+                    c.Name = spec.Name; c.Group = spec.Group; c.IntervalMs = spec.IntervalMs; c.Host = spec.Host;
+                    c.Check = spec.Check; c.Port = spec.Port; c.Url = spec.Url; c.Expect = spec.Expect;
+                    c.Keyword = spec.Keyword; c.Insecure = spec.Insecure; c.TimeoutMs = spec.TimeoutMs;
+                    if (changed) { rt.Reset(); lock (rt.Lock) { rt.CertExpires = null; rt.CertSubject = null; rt.ErrShort = null; } }
                     rt.Wake.Set();
                     result = rt.Cfg;
                 }
                 else
                 {
-                    var t = new TargetConfig { Name = (name ?? "").Trim(), Host = host, Group = (group ?? "").Trim(), IntervalMs = intervalMs };
+                    var t = spec;
+                    t.Id = new TargetConfig().Id;
                     lock (cfg) cfg.Targets.Add(t);
                     StartRuntime(t);
                     AddEvent(t, "added", null, 0);
@@ -265,11 +273,14 @@ namespace MonitorIPs
             return rt != null && !rt.Cfg.Paused && rt.State == "down";
         }
 
-        public bool HasHost(string host)
+        /// <summary>¿Ya existe una comprobación con esta clave? (ver TargetConfig.Key)</summary>
+        public bool HasKey(string key)
         {
-            host = (host ?? "").Trim();
-            lock (targets) return targets.Any(t => string.Equals(t.Cfg.Host, host, StringComparison.OrdinalIgnoreCase));
+            lock (targets) return targets.Any(t => t.Cfg.Key == key);
         }
+
+        /// <summary>¿Este host ya se vigila por ping? (escáner de red)</summary>
+        public bool HasHost(string host) { return HasKey("ping|" + (host ?? "").Trim().ToLowerInvariant()); }
 
         /// <summary>Evento informativo que no pertenece a una IP concreta (escaneos, etc.).</summary>
         public void InfoEvent(string type, string name, string host)
@@ -288,27 +299,13 @@ namespace MonitorIPs
                     var c = rt.Cfg;
                     if (c.Paused) { rt.Wake.WaitOne(500); continue; }
                     var sw = Stopwatch.StartNew();
-                    int ms = -1, ttl = 0;
-                    string err = null;
                     int epoch = rt.Epoch;
-                    try
-                    {
-                        PingReply reply = ping.Send(c.Host, cfg.TimeoutMs, Util.PingPayload, PingOpts);
-                        if (reply.Status == IPStatus.Success)
-                        {
-                            ms = (int)reply.RoundtripTime;
-                            ttl = reply.Options != null ? reply.Options.Ttl : 0;
-                        }
-                        else err = StatusText(reply.Status);
-                    }
-                    catch (PingException ex)
-                    {
-                        err = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                    }
-                    catch (Exception ex) { err = ex.Message; }
+                    ProbeResult r;
+                    try { r = Probes.Run(c, ping, cfg.TimeoutMs); }
+                    catch (Exception ex) { r = ProbeResult.Fail("ERROR", ex.Message); }
 
                     if (rt.Stop) break;
-                    if (!c.Paused && epoch == rt.Epoch) Record(rt, ms, ttl, err);
+                    if (!c.Paused && epoch == rt.Epoch) Record(rt, r);
 
                     int wait = c.IntervalMs - (int)sw.ElapsedMilliseconds;
                     if (wait < 50) wait = 50;
@@ -317,10 +314,12 @@ namespace MonitorIPs
             }
         }
 
-        void Record(TargetRuntime rt, int ms, int ttl, string err)
+        void Record(TargetRuntime rt, ProbeResult res)
         {
+            int ms = res.Ms, ttl = res.Code;
+            string err = res.Error;
             long now = Util.NowMs();
-            MonitorEvent pending = null;
+            MonitorEvent pending = null, certEvent = null;
             bool isDown;
             lock (rt.Lock)
             {
@@ -333,6 +332,7 @@ namespace MonitorIPs
                     rt.Recv++;
                     rt.ConsecFail = 0;
                     rt.LastError = null;
+                    rt.ErrShort = null;
                     if (rt.State != "up")
                     {
                         if (rt.State == "down")
@@ -344,6 +344,7 @@ namespace MonitorIPs
                 else
                 {
                     rt.LastError = err;
+                    rt.ErrShort = res.Short;
                     rt.ConsecFail++;
                     if (rt.ConsecFail == 1) rt.FirstFailT = now;
                     if (rt.ConsecFail >= cfg.DownAfter && rt.State != "down")
@@ -354,30 +355,28 @@ namespace MonitorIPs
                     }
                 }
                 isDown = rt.State == "down";
+                if (res.CertExpires.HasValue)
+                {
+                    rt.CertExpires = res.CertExpires; rt.CertSubject = res.CertSubject;
+                    int days = (int)Math.Floor((res.CertExpires.Value - DateTime.Now).TotalDays);
+                    if (days <= 14 && rt.CertWarnDay != DateTime.Today)
+                    {
+                        rt.CertWarnDay = DateTime.Today;
+                        certEvent = MakeEvent(rt.Cfg, "cert", days < 0 ? "El certificado caducó hace " + (-days) + " días" : "El certificado caduca en " + days + " días", 0);
+                    }
+                }
             }
             History.Add(rt.Cfg.Id, ms, isDown);
             if (pending != null) PushEvent(pending);
-        }
-
-        static string StatusText(IPStatus st)
-        {
-            switch (st)
-            {
-                case IPStatus.TimedOut: return "Tiempo de espera agotado para esta solicitud.";
-                case IPStatus.DestinationHostUnreachable: return "Host de destino inaccesible.";
-                case IPStatus.DestinationNetworkUnreachable: return "Red de destino inaccesible.";
-                case IPStatus.TtlExpired: return "TTL expirado en tránsito.";
-                case IPStatus.DestinationUnreachable: return "Destino inaccesible.";
-                case IPStatus.BadRoute: return "Ruta incorrecta.";
-                default: return "Error: " + st;
-            }
+            if (certEvent != null) PushEvent(certEvent);
         }
 
         // ---------- eventos ----------
 
         MonitorEvent MakeEvent(TargetConfig t, string type, string detail, double dur)
         {
-            return new MonitorEvent { T = Util.NowMs(), TargetId = t.Id, Name = t.Name, Host = t.Host, Type = type, Detail = detail, Duration = dur };
+            string host = t.Check == "http" ? t.Url : t.Check == "tcp" ? t.Host + " · " + t.CheckLabel : t.Host;
+            return new MonitorEvent { T = Util.NowMs(), TargetId = t.Id, Name = t.Name, Host = host, Type = type, Detail = detail, Duration = dur };
         }
 
         void AddEvent(TargetConfig t, string type, string detail, double dur) { PushEvent(MakeEvent(t, type, detail, dur)); }
@@ -477,6 +476,12 @@ namespace MonitorIPs
                     { "loss", n > 0 ? Math.Round(100.0 * (n - okCount) / n, 1) : 0 },
                     { "window", n },
                     { "samples", fresh },
+                    { "check", c.Check }, { "port", c.Port }, { "url", c.Url }, { "label", c.CheckLabel },
+                    { "expect", c.Expect }, { "keyword", c.Keyword }, { "insecure", c.Insecure }, { "timeoutMs", c.TimeoutMs },
+                    { "short", rt.ConsecFail > 0 ? rt.ErrShort : null },
+                    { "certSubject", rt.CertSubject },
+                    { "certDays", rt.CertExpires.HasValue ? (object)(int)Math.Floor((rt.CertExpires.Value - DateTime.Now).TotalDays) : null },
+                    { "certExpires", rt.CertExpires.HasValue ? (object)(long)(rt.CertExpires.Value.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds : null },
                 };
             }
         }
