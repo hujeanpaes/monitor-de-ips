@@ -4,7 +4,7 @@ Monitor para Windows que vigila varias IPs y servicios a la vez (**ping**, **pue
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.7.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.8.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -14,6 +14,8 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 |---|---|
 | **Ping continuo** | Una tarjeta por IP con latencia actual, gráfica de los últimos 2 min, mín/prom/máx y % de pérdida. Verde = en línea, ámbar = latencia alta o pérdidas, rojo = caída. |
 | **Servicios (TCP y web)** | Además del ping: comprueba un **puerto TCP** (escritorio remoto, SQL, impresora…) o una **web** (código HTTP y texto esperado, certificado HTTPS con aviso de caducidad). "Detectar puertos abiertos" encuentra los servicios de un equipo con un clic. La tarjeta muestra la causa del fallo: puerto cerrado, sin respuesta, HTTP 503… |
+| **Vista de lista** | Alterna entre tarjetas y una **lista compacta** (una fila por comprobación, con minigráfica) para vigilar muchas IPs sin scroll. Se ordena por nombre, latencia, estado o pérdida. Tecla `V`. |
+| **Modo pantalla (NOC)** | Para un monitor de pared: reloj, contadores grandes y disponibilidad de 24 h, con un mosaico que siempre cabe en pantalla y pone **las caídas primero** y en rojo. Mantiene la pantalla encendida y oculta el cursor. Tecla `M` (y `F11` para pantalla completa). |
 | **Detalle** | Gráfica de 1, 5 o 15 min, jitter, enviados/recibidos, último error y consola con el formato de `ping -t`. |
 | **Alertas** | Tras N fallos seguidos (por defecto 3) la IP pasa a *caída*: aviso en pantalla, pitido, contador en el título y notificación de Windows, también con la ventana cerrada. Al recuperarse avisa con la duración de la caída. |
 | **Bandeja e inicio con Windows** | Sigue vigilando en la bandeja al cerrar la ventana y puede arrancar solo al encender el equipo. |
@@ -23,7 +25,7 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 | **Papelera** | Las IPs eliminadas, una a una o todas, se pueden recuperar durante 30 días. Las acciones de borrado piden confirmación y se pueden deshacer. |
 | **Historial y disponibilidad** | Historial por minuto de cada IP (24 h, 7 días, 30 días): % de disponibilidad, caídas, tiempo caído y latencias, con gráfica y lista de caídas. Vista "Disponibilidad" de todas las IPs con exporte a CSV. |
 | **Logs y exportes** | Log diario automático de eventos en CSV y exportación de eventos, resumen por IP y latencias (separador `;`, se abre directo en Excel). |
-| **Interfaz** | Tema oscuro y claro, atajos de teclado (`N` añadir, `Ctrl+F` buscar) y diseño adaptable. |
+| **Interfaz** | Tema oscuro y claro, atajos de teclado (`N` añadir, `Ctrl+F` buscar, `V` tarjetas/lista, `M` modo pantalla) y diseño adaptable. |
 
 ## Requisitos
 
@@ -69,7 +71,7 @@ Si prefieres que cerrar la ventana cierre el monitor, desactiva *Ajustes → Seg
 
 | Archivo | Contenido |
 |---|---|
-| `config.json` | IPs, nombres, grupos, intervalos, papelera y ajustes. Se puede editar a mano. |
+| `config.json` | IPs, nombres, grupos, intervalos, papelera y ajustes (también la vista, el orden de la lista y el modo pantalla). Se puede editar a mano. |
 | `history\AAAA-MM-DD.csv` | Historial por minuto e IP (disponibilidad y latencias). Se conserva 90 días por defecto (ajustable). |
 | `logs\eventos-AAAA-MM-DD.csv` | Caídas, recuperaciones y cambios del día. |
 | `exports\` | Archivos exportados desde el menú ⋮. |

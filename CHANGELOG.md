@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.8.0] - 2026-11-13
+
+### Añadido
+- **Vista de lista compacta**: alterna con las tarjetas desde la barra de filtros (o con la tecla `V`). Una fila por comprobación con estado, latencia, minigráfica de 2 min, promedio, máximo y pérdida. Se ordena por nombre, latencia, estado o pérdida pulsando las cabeceras. Se adapta al ancho disponible, también con el panel de eventos abierto.
+- **Modo pantalla (NOC)** para monitores de pared: desde el botón de la cabecera, el menú ⋮ o la tecla `M`.
+  - Muestra reloj, contadores grandes de caídas, en línea y pausadas, y la disponibilidad de las últimas 24 h.
+  - Un mosaico que siempre cabe en pantalla, ordenado por gravedad: las caídas primero y en rojo, con su causa y el tiempo caído.
+  - Con más de 60 comprobaciones, las que van bien pasan a pastillas pequeñas.
+  - Respeta la búsqueda activa (por ejemplo, un solo grupo), mantiene la pantalla encendida y oculta el cursor.
+  - Se sale con `Esc`; `F11` pone la ventana a pantalla completa.
+- La vista elegida, el orden de la lista y el modo pantalla se recuerdan al reabrir (en `config.json`).
+
 ## [1.7.0] - 2026-11-13
 
 ### Añadido
@@ -121,6 +133,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.8.0]: ../../releases/tag/v1.8.0
 [1.7.0]: ../../releases/tag/v1.7.0
 [1.6.0]: ../../releases/tag/v1.6.0
 [1.5.0]: ../../releases/tag/v1.5.0

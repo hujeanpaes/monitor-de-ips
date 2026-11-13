@@ -161,6 +161,12 @@ namespace MonitorIPs
         public bool UpdateCheck { get; set; }
         /// <summary>Versión que el usuario decidió omitir ("Omitir esta versión").</summary>
         public string SkippedVersion { get; set; }
+        /// <summary>Vista principal: "cards" (tarjetas) o "list" (lista compacta).</summary>
+        public string View { get; set; }
+        /// <summary>Orden de la vista de lista: "" (el de siempre) o "campo:asc|desc" (name, lat, state, loss).</summary>
+        public string ListSort { get; set; }
+        /// <summary>Se cerró en modo pantalla (NOC): al reabrir vuelve a ese modo.</summary>
+        public bool ScreenMode { get; set; }
 
         public AppConfig()
         {
@@ -177,6 +183,8 @@ namespace MonitorIPs
             HistoryDays = 90;
             UpdateCheck = true;
             SkippedVersion = "";
+            View = "cards";
+            ListSort = "";
         }
 
         public void Normalize()
@@ -193,6 +201,8 @@ namespace MonitorIPs
             if (HistoryDays < 7) HistoryDays = 7;
             if (HistoryDays > 365) HistoryDays = 365;
             if (Theme != "light") Theme = "dark";
+            if (View != "list") View = "cards";
+            if (ListSort == null || !System.Text.RegularExpressions.Regex.IsMatch(ListSort, "^(name|lat|state|loss):(asc|desc)$")) ListSort = "";
             foreach (var t in Targets)
             {
                 if (string.IsNullOrEmpty(t.Id)) t.Id = Guid.NewGuid().ToString("N").Substring(0, 10);

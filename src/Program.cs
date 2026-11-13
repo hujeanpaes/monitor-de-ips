@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.7.0.0")]
-[assembly: AssemblyFileVersion("1.7.0.0")]
+[assembly: AssemblyVersion("1.8.0.0")]
+[assembly: AssemblyFileVersion("1.8.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.7.0";
+        const string Version = "1.8.0";
         static string token;
         static int port;
         static HttpListener listener;
@@ -381,6 +381,9 @@ namespace MonitorIPs
                     if (b.ContainsKey("notify")) config.Notify = Bool(b, "notify");
                     if (b.ContainsKey("showEvents")) config.ShowEvents = Bool(b, "showEvents");
                     if (b.ContainsKey("theme")) config.Theme = Str(b, "theme");
+                    if (b.ContainsKey("view")) config.View = Str(b, "view");
+                    if (b.ContainsKey("listSort")) config.ListSort = Str(b, "listSort");
+                    if (b.ContainsKey("screenMode")) config.ScreenMode = Bool(b, "screenMode");
                     if (b.ContainsKey("closeToTray")) config.CloseToTray = Bool(b, "closeToTray");
                     if (b.ContainsKey("updateCheck")) config.UpdateCheck = Bool(b, "updateCheck");
                     if (b.ContainsKey("historyDays")) { config.HistoryDays = (int)Num(b, "historyDays", 90); config.Normalize(); History.Purge(); }
@@ -451,6 +454,7 @@ namespace MonitorIPs
                 { "dataDir", Store.DataDir }, { "version", Version }, { "installed", Store.Installed },
                 { "closeToTray", config.CloseToTray }, { "autostart", Autostart.IsEnabled() }, { "trayAlerts", trayAlerts },
                 { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() }, { "updateCheck", config.UpdateCheck },
+                { "view", config.View }, { "listSort", config.ListSort }, { "screenMode", config.ScreenMode },
             };
         }
 
