@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.2.0";
+        const string Version = "1.3.0";
         static string token;
         static int port;
         static HttpListener listener;
@@ -348,7 +348,7 @@ namespace MonitorIPs
             return new Dictionary<string, object> {
                 { "timeoutMs", config.TimeoutMs }, { "downAfter", config.DownAfter }, { "highLatencyMs", config.HighLatencyMs },
                 { "sound", config.Sound }, { "notify", config.Notify }, { "theme", config.Theme }, { "showEvents", config.ShowEvents },
-                { "dataDir", Store.DataDir }, { "version", Version },
+                { "dataDir", Store.DataDir }, { "version", Version }, { "installed", Store.Installed },
             };
         }
 

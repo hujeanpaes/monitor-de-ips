@@ -1,10 +1,10 @@
 # Monitor de IPs
 
-Monitor **portable** para Windows que vigila varias IPs a la vez por **ping continuo**, traza rutas con **tracert** y **descubre equipos activos** en un rango de red, todo desde una interfaz moderna.
+Monitor para Windows que vigila varias IPs a la vez por **ping continuo**, traza rutas con **tracert** y **descubre equipos activos** en un rango de red, todo desde una interfaz moderna.
 
-Es un único `MonitorIPs.exe` de unos 150 KB. No hace falta instalar nada: usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
+Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.2.0 · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.3.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -28,23 +28,39 @@ Es un único `MonitorIPs.exe` de unos 150 KB. No hace falta instalar nada: usa .
 - .NET Framework 4.x (incluido en Windows).
 - Microsoft Edge (incluido en Windows). Si no está, se usa Chrome, Brave o el navegador predeterminado.
 
+## Descargas
+
+Cada versión se publica en **[Releases](../../releases/latest)** con estas opciones:
+
+| Archivo | Cuándo usarlo |
+|---|---|
+| `MonitorIPs-<versión>-Setup.exe` | **Instalador.** Menú Inicio, acceso directo, desinstalador y actualización encima de la versión anterior. No pide permisos de administrador (opcionalmente, para todos los usuarios). |
+| `MonitorIPs-<versión>-Portable.exe` | **Portable.** Un solo archivo, sin instalar: ideal para USB o carpetas compartidas. |
+| `MonitorIPs-<versión>-Portable.zip` | El portable comprimido, con `LEEME.txt`. |
+| `SHA256SUMS.txt` | Huellas SHA-256 para verificar las descargas. |
+
+> La primera vez, Windows puede mostrar **"Windows protegió su PC"** porque los ejecutables no tienen firma digital: *Más información → Ejecutar de todas formas*.
+
 ## Uso
 
-1. Descarga `MonitorIPs.exe` desde la sección [Releases](../../releases) o compílalo (ver abajo).
-2. Colócalo en cualquier carpeta (escritorio, USB…) y ábrelo con doble clic.
-3. Se abre una ventana propia (Edge en modo aplicación, sin pestañas). Al cerrarla, el monitor se detiene.
+1. **Instalador:** ejecuta el Setup y abre *Monitor de IPs* desde el menú Inicio o el escritorio.
+   **Portable:** coloca el `.exe` en cualquier carpeta y ábrelo con doble clic.
+2. Se abre una ventana propia (Edge en modo aplicación, sin pestañas). Al cerrarla, el monitor se detiene.
 
-> La primera vez, Windows puede mostrar **"Windows protegió su PC"** porque el ejecutable no está firmado: *Más información → Ejecutar de todas formas*.
+### Dónde guarda los datos
 
-### Datos que genera (junto al .exe)
+| | Instalado | Portable |
+|---|---|---|
+| Ubicación | `%APPDATA%\MonitorIPs` | Junto al `.exe` (o `%APPDATA%\MonitorIPs` si la carpeta no permite escribir) |
+| Al actualizar o desinstalar | Se conservan | Se conservan mientras no borres la carpeta |
 
-| Ruta | Contenido |
+| Archivo | Contenido |
 |---|---|
 | `config.json` | IPs, nombres, grupos, intervalos, papelera y ajustes. Se puede editar a mano. |
 | `logs\eventos-AAAA-MM-DD.csv` | Caídas, recuperaciones y cambios del día. |
 | `exports\` | Archivos exportados desde el menú ⋮. |
 
-Si la carpeta no permite escritura, se usa `%APPDATA%\MonitorIPs`. Para llevar tus IPs a otro PC, copia `config.json` junto al `.exe`.
+Para llevar tus IPs a otro PC, copia `config.json` a la carpeta de datos del otro equipo. *Ajustes* muestra la carpeta en uso y si la copia es instalada o portable.
 
 ## Compilar
 
@@ -55,6 +71,20 @@ build.bat
 ```
 
 El resultado queda en `dist\MonitorIPs.exe`. Si falta `src\app.ico`, se genera con `tools\make-icon.ps1`.
+
+## Publicar una versión
+
+Requiere [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`) y GitHub CLI con sesión iniciada.
+
+1. Sube la versión en `src\Program.cs` (`const string Version` y atributos de ensamblado) y añade su sección en `CHANGELOG.md`.
+2. Genera y revisa los archivos (quedan en `dist\release\<versión>\`):
+   ```powershell
+   .\release.ps1
+   ```
+3. Con los cambios ya en `main`, publica (crea la etiqueta `v<versión>` y la Release con instalador, portables y SHA256SUMS):
+   ```powershell
+   .\release.ps1 -Publish
+   ```
 
 ## Arquitectura
 
@@ -76,6 +106,9 @@ MonitorIPs.exe (C#, .NET Framework 4)
 | `src/Config.cs` | Modelo de configuración, guardado atómico de `config.json`, logs CSV y utilidades. |
 | `src/web/index.html` | Interfaz completa (HTML + CSS + JS, sin dependencias externas). |
 | `build.bat` | Compilación con el `csc.exe` de Windows. |
+| `release.ps1` | Genera instalador, portables y SHA256SUMS, y publica la Release. |
+| `installer/MonitorIPs.iss` | Script del instalador (Inno Setup). |
+| `installer/*` | Marcador de versión instalada, `LEEME` del portable y plantilla de notas de la Release. |
 | `tools/make-icon.ps1` | Genera el icono de la aplicación. |
 
 ## Seguridad y privacidad
