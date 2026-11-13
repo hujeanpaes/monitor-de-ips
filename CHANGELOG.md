@@ -2,6 +2,20 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.11.0] - 2026-11-13
+
+### Añadido
+- **"Guardar como" al exportar:** los exportes CSV (eventos, resumen, latencias y disponibilidad) y el informe PDF abren el cuadro de Windows para elegir nombre y carpeta.
+  - Empieza en la última carpeta usada, que se recuerda entre arranques.
+  - El cuadro aparece delante de la ventana del monitor y solo puede haber uno abierto.
+- **Aviso tras guardar** con los botones **Abrir** y **Mostrar en la carpeta**.
+- **Informe PDF:** casilla *Abrir el PDF al terminar*, que se recuerda.
+- **Ajuste nuevo:** *Preguntar dónde guardar los exportes*, activado por defecto. Desactivado, se guardan directamente en la carpeta de exportes, como antes.
+
+### Cambiado
+- Al exportar ya no se abre el Explorador automáticamente. El botón del informe pasa a ser **Guardar PDF…**.
+- Si cancelas "Guardar como", no se guarda nada.
+
 ## [1.10.1] - 2026-11-13
 
 Versión de mantenimiento: no cambia el uso del programa.
@@ -185,6 +199,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.11.0]: ../../releases/tag/v1.11.0
 [1.10.1]: ../../releases/tag/v1.10.1
 [1.10.0]: ../../releases/tag/v1.10.0
 [1.9.0]: ../../releases/tag/v1.9.0

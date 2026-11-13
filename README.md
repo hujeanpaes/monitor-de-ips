@@ -82,7 +82,11 @@ Menú ⋮ → **Avisos por Telegram…**:
 
 ### Informe PDF
 
-Menú ⋮ → **Informe PDF…** (o el botón de la ventana *Disponibilidad*): elige periodo, comprobaciones y título, y pulsa **Generar PDF**. Se abre al terminar y queda en la carpeta `exports`.
+Menú ⋮ → **Informe PDF…** (o el botón de la ventana *Disponibilidad*): elige periodo, comprobaciones y título, pulsa **Guardar PDF…** y elige nombre y carpeta. Si está marcada *Abrir el PDF al terminar*, se abre al acabar.
+
+### Exportar
+
+Los exportes CSV (menú ⋮ y ventana *Disponibilidad*) y el informe PDF abren el cuadro **Guardar como** de Windows en la última carpeta que usaste. Al guardar aparece un aviso con **Abrir** y **Mostrar en la carpeta**. Si prefieres que se guarden directamente en la carpeta `exports`, desactiva *Ajustes → Preguntar dónde guardar los exportes*.
 
 ## Datos y privacidad
 
@@ -96,7 +100,7 @@ Menú ⋮ → **Informe PDF…** (o el botón de la ventana *Disponibilidad*): e
 | `config.json` | Comprobaciones, grupos, papelera y ajustes. Se puede editar a mano o copiar a otro PC. |
 | `history\AAAA-MM-DD.csv` | Historial por minuto (90 días por defecto, ajustable). |
 | `logs\eventos-AAAA-MM-DD.csv` | Caídas, recuperaciones y cambios del día. |
-| `exports\` | Exportes CSV e informes PDF. |
+| `exports\` | Carpeta propuesta la primera vez para exportes CSV e informes PDF. |
 
 - La interfaz sólo escucha en `localhost`, en un puerto aleatorio y con un token por sesión.
 - A internet sólo salen las comprobaciones que configures, la consulta diaria de versión nueva a GitHub (desactivable) y, si los activas, los avisos a `api.telegram.org`. El token del bot se guarda cifrado con DPAPI.
@@ -142,6 +146,7 @@ MonitorIPs.exe (C#, .NET Framework 4)
 | `src/Report.cs` | Informe de disponibilidad: HTML A4 impreso a PDF con Edge en modo headless. |
 | `src/Telegram.cs` | Avisos por Telegram: cola, agrupación, retraso mínimo, silencio, reintentos y token cifrado. |
 | `src/Tray.cs` | Icono y menú de la bandeja, notificaciones, enfoque de la ventana e inicio con Windows. |
+| `src/Dialogs.cs` | Cuadro "Guardar como" de Windows para exportes e informes, delante de la ventana del monitor. |
 | `src/Updater.cs` | Aviso de versión nueva (GitHub Releases, sólo lectura). |
 | `src/Tracer.cs` · `src/Scanner.cs` | Tracert y escáner de rangos IPv4 (ping + ARP). |
 | `src/Config.cs` | Modelo de configuración, guardado atómico, logs CSV y utilidades. |
