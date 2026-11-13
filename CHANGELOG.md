@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.7.0] - 2026-11-13
+
+### Añadido
+- **Umbrales por comprobación**: en Añadir / Editar, sección "Alertas de esta comprobación" con *latencia alta* y *fallos seguidos para darla por caída* propios. Vacíos usan el valor general. El detalle indica "Umbral propio".
+- **Aviso de versión nueva**: el monitor consulta la última Release pública en GitHub (al minuto de arrancar y una vez al día, o a mano con "Buscar actualizaciones"). Si hay una más nueva muestra una franja con *Novedades*, *Descargar* (instalador o portable según tu copia), *Omitir esta versión*, y avisa desde la bandeja si la ventana está cerrada. No descarga ni ejecuta nada por sí mismo.
+- Ajuste "Buscar actualizaciones automáticamente" con el estado de la última comprobación.
+
+### Cambiado
+- La tarjeta, la línea de umbral de la gráfica y la consola usan el umbral efectivo de cada comprobación.
+- El primer arranque crea dos ejemplos públicos (Google DNS y Cloudflare DNS) en lugar de IPs internas.
+- El repositorio pasa a ser público para que las Releases se puedan descargar y consultar sin cuenta.
+
 ## [1.6.0] - 2026-11-13
 
 ### Añadido
@@ -109,6 +121,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.7.0]: ../../releases/tag/v1.7.0
 [1.6.0]: ../../releases/tag/v1.6.0
 [1.5.0]: ../../releases/tag/v1.5.0
 [1.4.1]: ../../releases/tag/v1.4.1

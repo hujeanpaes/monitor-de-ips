@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.6.0.0")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]
+[assembly: AssemblyFileVersion("1.7.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.6.0";
+        const string Version = "1.7.0";
         static string token;
         static int port;
         static HttpListener listener;
@@ -71,6 +71,7 @@ namespace MonitorIPs
                 engine.EventRaised += OnEngineEvent;
                 engine.Start();
                 History.Start(Store.HistoryDir, () => config.HistoryDays);
+                Updater.Start(Version, config, OnNewVersion);
                 Autostart.RepairPath();
                 tray = new TrayApp();
                 if (!trayMode) OpenWindow(port);
@@ -137,6 +138,14 @@ namespace MonitorIPs
                 tray.Post(() => tray.ShowAlert("⚠ " + name + " sin respuesta", ev.Host + (string.IsNullOrEmpty(ev.Detail) ? "" : " · " + ev.Detail), true));
             else
                 tray.Post(() => tray.ShowAlert("✔ " + name + " recuperada", ev.Host + " · estuvo caída " + Duration(ev.Duration), false));
+        }
+
+        /// <summary>Versión nueva encontrada: con la ventana cerrada se avisa desde la bandeja (una vez por versión).</summary>
+        static void OnNewVersion(Updater.Info info)
+        {
+            if (tray == null || WindowOpen()) return; // con la ventana abierta lo muestra la franja de la UI
+            tray.Post(() => tray.ShowAlert("Nueva versión disponible: " + info.Version,
+                "Abre el monitor para ver las novedades y descargarla.", false));
         }
 
         static string Duration(double seconds)
@@ -300,6 +309,7 @@ namespace MonitorIPs
                     var snap = engine.Snapshot(since, ev);
                     snap["settings"] = Settings();
                     snap["trashCount"] = engine.TrashCount();
+                    snap["update"] = Updater.Brief();
                     return snap;
                 }
                 case "/api/bye":
@@ -372,6 +382,7 @@ namespace MonitorIPs
                     if (b.ContainsKey("showEvents")) config.ShowEvents = Bool(b, "showEvents");
                     if (b.ContainsKey("theme")) config.Theme = Str(b, "theme");
                     if (b.ContainsKey("closeToTray")) config.CloseToTray = Bool(b, "closeToTray");
+                    if (b.ContainsKey("updateCheck")) config.UpdateCheck = Bool(b, "updateCheck");
                     if (b.ContainsKey("historyDays")) { config.HistoryDays = (int)Num(b, "historyDays", 90); config.Normalize(); History.Purge(); }
                     if (b.ContainsKey("autostart")) Autostart.Set(Bool(b, "autostart"));
                     config.Normalize();
@@ -386,6 +397,22 @@ namespace MonitorIPs
                     return Ok();
                 case "/api/export":
                     return new Dictionary<string, object> { { "path", Export(Str(b, "kind"), Str(b, "range")) } };
+                case "/api/update":
+                    return Updater.Status();
+                case "/api/update/check":
+                    Updater.Check();
+                    return Updater.Status();
+                case "/api/update/open":
+                {
+                    string url = Updater.UrlFor(Str(b, "kind"));
+                    if (url == null) throw new ArgumentException("No hay información de la versión nueva");
+                    Process.Start(url); // sólo enlaces de github.com/hujeanpaes/monitor-de-ips (validados en Updater)
+                    return Ok();
+                }
+                case "/api/update/skip":
+                    config.SkippedVersion = Str(b, "version");
+                    Store.Save(config);
+                    return Updater.Status();
                 case "/api/history":
                     return History.ForTarget(q["id"] ?? "", Range(q["range"]), engine.IsDown(q["id"] ?? ""));
                 case "/api/availability":
@@ -423,7 +450,7 @@ namespace MonitorIPs
                 { "sound", config.Sound }, { "notify", config.Notify }, { "theme", config.Theme }, { "showEvents", config.ShowEvents },
                 { "dataDir", Store.DataDir }, { "version", Version }, { "installed", Store.Installed },
                 { "closeToTray", config.CloseToTray }, { "autostart", Autostart.IsEnabled() }, { "trayAlerts", trayAlerts },
-                { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() },
+                { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() }, { "updateCheck", config.UpdateCheck },
             };
         }
 
@@ -508,6 +535,8 @@ namespace MonitorIPs
                 Expect = Str(b, "expect"), Keyword = Str(b, "keyword"),
                 Insecure = !b.ContainsKey("insecure") || Bool(b, "insecure"),
                 TimeoutMs = (int)Num(b, "timeoutMs", 0),
+                HighLatencyMs = (int)Num(b, "highLatencyMs", 0),
+                DownAfter = (int)Num(b, "downAfter", 0),
             };
         }
 

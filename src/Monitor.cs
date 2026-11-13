@@ -130,6 +130,7 @@ namespace MonitorIPs
                     c.Name = spec.Name; c.Group = spec.Group; c.IntervalMs = spec.IntervalMs; c.Host = spec.Host;
                     c.Check = spec.Check; c.Port = spec.Port; c.Url = spec.Url; c.Expect = spec.Expect;
                     c.Keyword = spec.Keyword; c.Insecure = spec.Insecure; c.TimeoutMs = spec.TimeoutMs;
+                    c.HighLatencyMs = spec.HighLatencyMs; c.DownAfter = spec.DownAfter;
                     if (changed) { rt.Reset(); lock (rt.Lock) { rt.CertExpires = null; rt.CertSubject = null; rt.ErrShort = null; } }
                     rt.Wake.Set();
                     result = rt.Cfg;
@@ -347,7 +348,8 @@ namespace MonitorIPs
                     rt.ErrShort = res.Short;
                     rt.ConsecFail++;
                     if (rt.ConsecFail == 1) rt.FirstFailT = now;
-                    if (rt.ConsecFail >= cfg.DownAfter && rt.State != "down")
+                    int downAfter = rt.Cfg.DownAfter > 0 ? rt.Cfg.DownAfter : cfg.DownAfter; // umbral propio o general
+                    if (rt.ConsecFail >= downAfter && rt.State != "down")
                     {
                         rt.State = "down";
                         rt.StateSince = rt.FirstFailT;
@@ -478,6 +480,8 @@ namespace MonitorIPs
                     { "samples", fresh },
                     { "check", c.Check }, { "port", c.Port }, { "url", c.Url }, { "label", c.CheckLabel },
                     { "expect", c.Expect }, { "keyword", c.Keyword }, { "insecure", c.Insecure }, { "timeoutMs", c.TimeoutMs },
+                    { "highLatencyMs", c.HighLatencyMs }, { "downAfter", c.DownAfter },
+                    { "highEff", c.HighLatencyMs > 0 ? c.HighLatencyMs : cfg.HighLatencyMs }, { "downEff", c.DownAfter > 0 ? c.DownAfter : cfg.DownAfter },
                     { "short", rt.ConsecFail > 0 ? rt.ErrShort : null },
                     { "certSubject", rt.CertSubject },
                     { "certDays", rt.CertExpires.HasValue ? (object)(int)Math.Floor((rt.CertExpires.Value - DateTime.Now).TotalDays) : null },
