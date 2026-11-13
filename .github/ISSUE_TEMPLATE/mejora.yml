@@ -1,0 +1,19 @@
+name: Proponer una mejora
+description: Una idea para que el monitor sea más útil
+labels: ["mejora"]
+body:
+  - type: textarea
+    id: necesidad
+    attributes:
+      label: ¿Qué necesitas?
+      description: Describe el problema o la situación, no sólo la solución.
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Cómo te imaginas la solución?
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: ¿Lo resuelves hoy de otra forma?

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Descargar la última versión
+    url: https://github.com/hujeanpaes/monitor-de-ips/releases/latest
+    about: Instalador y portable de la versión más reciente.
+  - name: Avisar de un problema de seguridad
+    url: https://github.com/hujeanpaes/monitor-de-ips/security/advisories/new
+    about: De forma privada, sin publicarlo.

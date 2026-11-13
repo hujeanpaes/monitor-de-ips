@@ -2,6 +2,23 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.10.1] - 2026-11-13
+
+Versión de mantenimiento: no cambia el uso del programa.
+
+### Añadido
+- **Licencia MIT.** El instalador la muestra y la instala, y el portable `.zip` incluye `LICENCIA.txt`.
+- **README renovado:** capturas de pantalla, insignias, guías rápidas de Telegram y del informe PDF, y una sección de desarrollo.
+- **Archivos del proyecto:** plantillas para informar de errores y proponer mejoras, guía de seguridad (`SECURITY.md`) y `.editorconfig`.
+
+### Cambiado
+- Los botones de las tarjetas (pausar, tracert, editar, eliminar) flotan sobre la tarjeta al pasar el ratón, así que los nombres largos ya no se cortan.
+- Las duraciones se escriben igual en todo el programa ("4 min 12 s", "1 h 5 min"), también en las notificaciones de la bandeja.
+- En el informe PDF, el objetivo del 99,9 % se dibuja sobre las barras y su texto pasa a la leyenda. Si se abre como página web, tiene márgenes.
+
+### Interno
+- Utilidades comunes de formato y escapado HTML, sin copias repetidas, y limpieza de código sin uso.
+
 ## [1.10.0] - 2026-11-13
 
 ### Añadido
@@ -168,6 +185,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.10.1]: ../../releases/tag/v1.10.1
 [1.10.0]: ../../releases/tag/v1.10.0
 [1.9.0]: ../../releases/tag/v1.9.0
 [1.8.0]: ../../releases/tag/v1.8.0
