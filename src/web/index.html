@@ -1123,7 +1123,7 @@ $("#trCopy").onclick = async () => {
 function openSettings(){
   const s = S.settings;
   $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
-  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version;
+  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
   $("#dlgSettings").showModal();
 }
 $("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notification" in window && Notification.permission === "default") Notification.requestPermission(); });

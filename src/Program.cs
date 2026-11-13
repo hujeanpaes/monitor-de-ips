@@ -348,7 +348,7 @@ namespace MonitorIPs
             return new Dictionary<string, object> {
                 { "timeoutMs", config.TimeoutMs }, { "downAfter", config.DownAfter }, { "highLatencyMs", config.HighLatencyMs },
                 { "sound", config.Sound }, { "notify", config.Notify }, { "theme", config.Theme }, { "showEvents", config.ShowEvents },
-                { "dataDir", Store.DataDir }, { "version", Version },
+                { "dataDir", Store.DataDir }, { "version", Version }, { "installed", Store.Installed },
             };
         }
 

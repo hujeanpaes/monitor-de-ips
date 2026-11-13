@@ -98,10 +98,20 @@ namespace MonitorIPs
         static readonly object fileLock = new object();
         static readonly JavaScriptSerializer json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
 
+        /// <summary>Marcador que deja el instalador junto al .exe: indica versión instalada (no portable).</summary>
+        public const string InstalledMarker = "installed.mode";
+
+        public static bool Installed { get; private set; }
+
+        /// <summary>
+        /// Portable: datos junto al .exe. Instalado (existe installed.mode) o carpeta sin permiso de escritura:
+        /// datos en %APPDATA%\MonitorIPs, para que sobrevivan a actualizaciones y desinstalación.
+        /// </summary>
         public static void Init()
         {
             string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-            DataDir = IsWritable(exeDir)
+            Installed = File.Exists(Path.Combine(exeDir, InstalledMarker));
+            DataDir = !Installed && IsWritable(exeDir)
                 ? exeDir
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MonitorIPs");
             Directory.CreateDirectory(DataDir);
