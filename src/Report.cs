@@ -17,7 +17,9 @@ namespace MonitorIPs
     {
         public class Options
         {
-            public string Title, PeriodLabel, Scope, Version, Browser, OutDir, FileBase;
+            public string Title, PeriodLabel, Scope, Version, Browser;
+            /// <summary>Ruta final del PDF (el plan B usa la misma con extensión .html).</summary>
+            public string OutPath;
             public long FromMin, ToMin;
             public bool Daily;
             public List<Dictionary<string, object>> Targets;
@@ -33,12 +35,11 @@ namespace MonitorIPs
         {
             var data = History.Report(o.Targets.Select(t => (string)t["id"]), o.FromMin, o.ToMin, o.Daily, o.DownNow);
             string html = BuildHtml(o, data);
-            Directory.CreateDirectory(o.OutDir);
-
-            string pdf = Path.Combine(o.OutDir, o.FileBase + ".pdf");
+            string pdf = Path.ChangeExtension(o.OutPath, ".pdf");
+            Directory.CreateDirectory(Path.GetDirectoryName(pdf));
             if (o.Browser != null && ToPdf(o.Browser, html, pdf)) return new Result { Path = pdf, Pdf = true };
 
-            string file = Path.Combine(o.OutDir, o.FileBase + ".html");
+            string file = Path.ChangeExtension(o.OutPath, ".html");
             File.WriteAllText(file, html, new UTF8Encoding(false));
             return new Result { Path = file, Pdf = false };
         }
