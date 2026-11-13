@@ -48,6 +48,8 @@ namespace MonitorIPs
         public bool CloseToTray { get; set; }
         /// <summary>Ya se mostró el aviso "sigue vigilando en la bandeja".</summary>
         public bool TrayHintShown { get; set; }
+        /// <summary>Días de historial por minuto que se conservan (history\).</summary>
+        public int HistoryDays { get; set; }
 
         public AppConfig()
         {
@@ -61,6 +63,7 @@ namespace MonitorIPs
             Theme = "dark";
             ShowEvents = true;
             CloseToTray = true;
+            HistoryDays = 90;
         }
 
         public void Normalize()
@@ -73,6 +76,9 @@ namespace MonitorIPs
             if (DownAfter < 1) DownAfter = 1;
             if (DownAfter > 50) DownAfter = 50;
             if (HighLatencyMs < 1) HighLatencyMs = 1;
+            if (HistoryDays == 0) HistoryDays = 90;          // config antigua sin el campo
+            if (HistoryDays < 7) HistoryDays = 7;
+            if (HistoryDays > 365) HistoryDays = 365;
             if (Theme != "light") Theme = "dark";
             foreach (var t in Targets)
             {
@@ -100,6 +106,7 @@ namespace MonitorIPs
         public static string ConfigPath;
         public static string LogsDir;
         public static string ExportsDir;
+        public static string HistoryDir;
         static readonly object fileLock = new object();
         static readonly JavaScriptSerializer json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
 
@@ -123,6 +130,7 @@ namespace MonitorIPs
             ConfigPath = Path.Combine(DataDir, "config.json");
             LogsDir = Path.Combine(DataDir, "logs");
             ExportsDir = Path.Combine(DataDir, "exports");
+            HistoryDir = Path.Combine(DataDir, "history");
         }
 
         static bool IsWritable(string dir)
