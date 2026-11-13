@@ -382,6 +382,28 @@ namespace MonitorIPs
                 if (events.Count > 2000) events.RemoveRange(0, events.Count - 2000);
             }
             Store.LogEvent(ev);
+            var handler = EventRaised;
+            if (handler != null) try { handler(ev); } catch { }
+        }
+
+        /// <summary>Se dispara con cada evento nuevo (fuera de los bloqueos). La bandeja lo usa para avisar.</summary>
+        public event Action<MonitorEvent> EventRaised;
+
+        /// <summary>Recuento rápido para la bandeja: { en línea, caídas, pausadas, total }.</summary>
+        public int[] CountStates()
+        {
+            int up = 0, down = 0, paused = 0, total;
+            lock (targets)
+            {
+                total = targets.Count;
+                foreach (var rt in targets)
+                {
+                    if (rt.Cfg.Paused) paused++;
+                    else if (rt.State == "up") up++;
+                    else if (rt.State == "down") down++;
+                }
+            }
+            return new[] { up, down, paused, total };
         }
 
         public List<MonitorEvent> EventsSnapshot()
