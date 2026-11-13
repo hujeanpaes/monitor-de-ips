@@ -33,26 +33,35 @@ button,input,select,textarea{font:inherit;color:inherit}
 ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;border:2px solid var(--bg)}::-webkit-scrollbar-track{background:transparent}
 svg{flex:none}
 
-/* ---------- top bar ---------- */
-.top{height:64px;display:flex;align-items:center;gap:18px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.brand{display:flex;align-items:center;gap:11px;min-width:0}
-.logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 4px 16px var(--accent-soft)}
-.brand h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em;white-space:nowrap}
-.brand .sub{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.pills{display:flex;gap:8px;margin-left:8px}
-.pill{display:flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+/* ---------- cabecera: franja de identidad + acciones ---------- */
+body{display:flex;flex-direction:column}
+.top{height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px 0 18px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0;flex:0 1 auto}
+.logo{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 4px 16px var(--accent-soft)}
+.brand h1{font-size:16px;margin:0;font-weight:650;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;align-items:center;gap:8px;flex:none}
+.sep{width:1px;height:24px;background:var(--border);margin:0 2px}
+.spacer{flex:1}
+.narrow-only,.menu .narrow-only{display:none}
+
+/* ---------- franja de vista: filtros + búsqueda ---------- */
+.bar{flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px;border-bottom:1px solid var(--border);background:var(--bg)}
+.seg-f{display:flex;gap:2px;padding:3px;flex:none;background:var(--bg2);border:1px solid var(--border);border-radius:11px}
+.pill{display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border:0;border-radius:8px;background:none;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s,color .15s}
+.pill:hover{background:var(--hover);color:var(--text)}
 .pill b{color:var(--text);font-weight:650;font-variant-numeric:tabular-nums}
-.pill i{width:8px;height:8px;border-radius:50%}
+.pill i{width:8px;height:8px;border-radius:50%;flex:none}
 .pill.all i{background:var(--accent)}
 .pill.ok i{background:var(--ok)}.pill.bad i{background:var(--bad)}.pill.pause i{background:var(--pause)}
-.pill.bad.on{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad)}
+.pill.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25),inset 0 0 0 1px var(--border2)}
+.pill.bad.on{color:var(--bad);background:var(--bad-soft)}
 .pill.bad.on b{color:var(--bad)}
-.pill.sel{outline:2px solid var(--accent);outline-offset:1px}
-.spacer{flex:1}
-.search{position:relative;display:flex;align-items:center}
+.pill.bad.on.sel{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bad) 55%,transparent)}
+.search{position:relative;display:flex;align-items:center;flex:0 1 360px;min-width:150px}
 .search svg{position:absolute;left:10px;color:var(--dim);pointer-events:none}
-.search input{width:240px;height:36px;padding:0 12px 0 33px;border-radius:10px;border:1px solid var(--border);background:var(--surface);outline:none;transition:border-color .15s,width .2s}
-.search input:focus{border-color:var(--accent);width:290px}
+.search input{width:100%;height:34px;padding:0 12px 0 33px;border-radius:10px;border:1px solid var(--border);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.clock{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .btn{height:36px;display:inline-flex;align-items:center;gap:7px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-weight:550;white-space:nowrap;transition:background .15s,border-color .15s,transform .05s}
 .btn:hover{background:var(--hover);border-color:var(--border2)}
 .btn:active{transform:translateY(1px)}
@@ -68,7 +77,7 @@ svg{flex:none}
 .badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;display:none;place-items:center;border:2px solid var(--bg2)}
 .badge.show{display:grid}
 .menu-wrap{position:relative}
-.menu{position:absolute;right:0;top:44px;min-width:250px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:50;display:none}
+.menu{position:absolute;right:0;top:44px;min-width:250px;max-height:calc(100vh - 70px);overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:50;display:none}
 .menu.open{display:block;animation:pop .14s ease-out}
 .menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 10px;border:0;background:none;border-radius:8px;cursor:pointer;text-align:left}
 .menu button:hover{background:var(--hover)}
@@ -113,13 +122,13 @@ svg{flex:none}
 .toast .act:hover{background:var(--hover)}
 
 /* ---------- layout ---------- */
-.layout{display:flex;height:calc(100% - 64px)}
-main{flex:1;overflow:auto;padding:20px 22px 40px}
+.layout{display:flex;flex:1;min-height:0;position:relative;overflow:hidden}
+main{flex:1;min-width:0;overflow:auto;padding:20px 22px 40px}
 .group{margin-bottom:26px}
 .group-h{display:flex;align-items:center;gap:10px;margin:0 2px 12px;color:var(--muted);font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.07em}
 .group-h .line{flex:1;height:1px;background:var(--border)}
 .group-h .gstat{font-weight:500;text-transform:none;letter-spacing:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(290px,100%),1fr));gap:14px}
 
 /* ---------- cards ---------- */
 .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 12px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .15s;overflow:hidden}
@@ -265,49 +274,91 @@ tr.final td{background:var(--ok-soft)}
 .offline{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:var(--bad);color:#fff;padding:8px 16px;border-radius:10px;font-weight:600;box-shadow:var(--shadow);display:none;z-index:120}
 .offline.show{display:block}
 
-@media (max-width:1100px){ .pills .pill.ok,.pills .pill.pause{display:none} .search input{width:170px} .search input:focus{width:200px} aside.events{position:fixed;right:0;top:64px;bottom:0;z-index:40;box-shadow:var(--shadow)} .d-stats{grid-template-columns:repeat(4,1fr)} }
-@media (max-width:760px){ .brand .sub,.btn .lbl{display:none} .search{display:none} }
+/* ---------- adaptable: se va simplificando por pasos, nunca se superpone ---------- */
+.sc-foot,.tr-bar{flex-wrap:wrap}
+@media (max-width:1280px){ .clock{display:none} }
+@media (max-width:1100px){
+  .actions .btn:not(.primary) .lbl{display:none}
+  .actions .btn:not(.primary){padding:0 10px}
+  aside.events{position:absolute;right:0;top:0;bottom:0;z-index:40;box-shadow:var(--shadow)}
+  .d-stats{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:440px){
+  .pill .pl{display:none}
+  .pill{padding:0 10px}
+}
+@media (max-width:640px){
+  .wide-only{display:none !important}
+  .menu button.narrow-only{display:flex}
+  .menu hr.narrow-only{display:block}
+  .btn.primary .lbl{display:none}
+  .btn.primary{padding:0 10px}
+  .top{padding:0 12px;gap:8px}
+  .bar{flex-wrap:wrap;padding:8px 12px;gap:8px}
+  .seg-f{flex:1 1 100%;justify-content:space-between}
+  .seg-f .pill{flex:1;justify-content:center}
+  .search{flex:1 1 100%}
+  main{padding:14px 12px 30px}
+  aside.events{width:min(340px,100%)}
+  .d-stats{grid-template-columns:repeat(2,1fr)}
+  #dlgDetail .dlg-h{flex-wrap:wrap;row-gap:10px}
+  #dlgDetail .dlg-h > div{flex:1 1 calc(100% - 70px) !important}  /* fila 1: punto + título + cerrar (pisa el flex:1 en línea) */
+  #dlgDetail .dlg-h .x{order:1}
+  #dlgDetail .dlg-h .btn{order:2}                       /* fila 2: acciones */
+}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand">
     <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-8 4 16 3-8h6"/></svg></div>
-    <div><h1>Monitor de IPs</h1><div class="sub" id="clock">—</div></div>
-  </div>
-  <div class="pills">
-    <span class="pill all sel" data-f="" title="Ver todas"><i></i><b id="cAll">0</b> todas</span>
-    <span class="pill ok" data-f="ok" title="Filtrar en línea"><i></i><b id="cUp">0</b> en línea</span>
-    <span class="pill bad" data-f="bad" id="pillBad" title="Filtrar caídas"><i></i><b id="cDown">0</b> caídas</span>
-    <span class="pill pause" data-f="pause" title="Filtrar pausadas"><i></i><b id="cPause">0</b> pausadas</span>
+    <h1>Monitor de IPs</h1>
   </div>
   <div class="spacer"></div>
-  <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar IP, nombre, grupo o rango (192.168.3.1-50)…" title="Busca por texto o filtra por rango: 192.168.3.1-50 · 192.168.3.1 - 192.168.3.100 · 10.64.12.0/24  (Ctrl+F)" autocomplete="off"></label>
-  <button class="btn primary" id="btnAdd"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Añadir IP</span></button>
-  <button class="btn" id="btnTrace"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><span class="lbl">Tracert</span></button>
-  <button class="btn" id="btnScan" title="Descubrir IPs activas en un rango"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></svg><span class="lbl">Escanear red</span></button>
-  <button class="ibtn" id="btnEvents" title="Panel de eventos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="evBadge">0</span></button>
-  <div class="menu-wrap">
-    <button class="ibtn" id="btnMenu" title="Más opciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
-    <div class="menu" id="menu">
-      <button data-act="exp-events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><div>Exportar eventos<small>Caídas y recuperaciones (CSV)</small></div></button>
-      <button data-act="exp-summary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div>Exportar resumen<small>Estadísticas por IP (CSV)</small></div></button>
-      <button data-act="exp-samples"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><div>Exportar latencias<small>Cada respuesta, últimos 15 min (CSV)</small></div></button>
-      <hr>
-      <button data-act="open-logs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div>Abrir carpeta de logs<small>Historial diario automático</small></div></button>
-      <button data-act="pause-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5v14M15 5v14"/></svg><div>Pausar todas</div></button>
-      <button data-act="resume-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4l12 8-12 8z"/></svg><div>Reanudar todas</div></button>
-      <hr>
-      <button data-act="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg><div>Papelera <span class="chip" id="trashCount" style="display:none"></span><small>Recupera IPs eliminadas (30 días)</small></div></button>
-      <button data-act="clear-all" class="danger-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="m10 11 4 4M14 11l-4 4"/></svg><div>Eliminar todas las IPs…<small>Se mueven a la papelera</small></div></button>
-      <hr>
-      <button data-act="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><div>Ajustes</div></button>
-      <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor</div></button>
+  <div class="actions">
+    <button class="btn primary" id="btnAdd" title="Añadir IP (tecla N)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Añadir IP</span></button>
+    <button class="btn wide-only" id="btnScan" title="Descubrir IPs activas en un rango"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></svg><span class="lbl">Escanear red</span></button>
+    <button class="btn wide-only" id="btnTrace" title="Trazar la ruta a una IP"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><span class="lbl">Tracert</span></button>
+    <span class="sep wide-only"></span>
+    <button class="ibtn" id="btnEvents" title="Panel de eventos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="evBadge">0</span></button>
+    <button class="ibtn wide-only" id="btnSound" title="Sonido de alertas"></button>
+    <button class="ibtn wide-only" id="btnTheme" title="Cambiar tema"></button>
+    <div class="menu-wrap">
+      <button class="ibtn" id="btnMenu" title="Más opciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+      <div class="menu" id="menu">
+      <button data-act="scan" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg><div>Escanear red<small>Descubrir IPs activas en un rango</small></div></button>
+      <button data-act="trace" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><div>Tracert<small>Trazar la ruta a una IP</small></div></button>
+      <button data-act="sound" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><div>Sonido de alertas<small id="mSoundState">Activar / silenciar</small></div></button>
+      <button data-act="theme" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><div>Cambiar tema<small>Claro / oscuro</small></div></button>
+      <hr class="narrow-only">
+        <button data-act="exp-events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><div>Exportar eventos<small>Caídas y recuperaciones (CSV)</small></div></button>
+        <button data-act="exp-summary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div>Exportar resumen<small>Estadísticas por IP (CSV)</small></div></button>
+        <button data-act="exp-samples"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><div>Exportar latencias<small>Cada respuesta, últimos 15 min (CSV)</small></div></button>
+        <hr>
+        <button data-act="open-logs"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><div>Abrir carpeta de logs<small>Historial diario automático</small></div></button>
+        <button data-act="pause-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5v14M15 5v14"/></svg><div>Pausar todas</div></button>
+        <button data-act="resume-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4l12 8-12 8z"/></svg><div>Reanudar todas</div></button>
+        <hr>
+        <button data-act="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg><div>Papelera <span class="chip" id="trashCount" style="display:none"></span><small>Recupera IPs eliminadas (30 días)</small></div></button>
+        <button data-act="clear-all" class="danger-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="m10 11 4 4M14 11l-4 4"/></svg><div>Eliminar todas las IPs…<small>Se mueven a la papelera</small></div></button>
+        <hr>
+        <button data-act="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><div>Ajustes</div></button>
+        <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor</div></button>
+      </div>
     </div>
   </div>
-  <button class="ibtn" id="btnSound" title="Sonido de alertas"></button>
-  <button class="ibtn" id="btnTheme" title="Cambiar tema"></button>
 </header>
+<nav class="bar" aria-label="Filtros y búsqueda">
+  <div class="seg-f" role="group" aria-label="Filtrar por estado">
+    <button class="pill all sel" data-f="" title="Ver todas"><i></i><span class="pl">Todas</span><b id="cAll">0</b></button>
+    <button class="pill ok" data-f="ok" title="En línea"><i></i><span class="pl">En línea</span><b id="cUp">0</b></button>
+    <button class="pill bad" data-f="bad" id="pillBad" title="Caídas"><i></i><span class="pl">Caídas</span><b id="cDown">0</b></button>
+    <button class="pill pause" data-f="pause" title="Pausadas"><i></i><span class="pl">Pausadas</span><b id="cPause">0</b></button>
+  </div>
+  <div class="spacer wide-only"></div>
+  <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar IP, nombre, grupo o rango (192.168.3.1-50)…" title="Busca por texto o filtra por rango: 192.168.3.1-50 · 192.168.3.1 - 192.168.3.100 · 10.64.12.0/24  (Ctrl+F)" autocomplete="off"></label>
+  <span class="clock" id="clock"></span>
+</nav>
 
 <div class="layout">
   <main id="main">
@@ -811,6 +862,7 @@ function applyTheme(th){ document.documentElement.dataset.theme = th === "light"
 function applySettingsUI(){
   $("#btnSound").innerHTML = S.settings.sound ? ICON.sound : ICON.mute; $("#btnSound").classList.toggle("on", S.settings.sound);
   $("#btnSound").title = S.settings.sound ? "Sonido de alertas: activado" : "Sonido de alertas: silenciado";
+  $("#mSoundState").textContent = S.settings.sound ? "Activado · pulsa para silenciar" : "Silenciado · pulsa para activar";
   setEventsVisible(S.settings.showEvents && window.innerWidth > 1100, false);
 }
 $("#btnTheme").onclick = async () => { const th = S.settings.theme === "light" ? "dark" : "light"; S.settings.theme = th; applyTheme(th); render(); S.settings = await post("/api/settings", {theme:th}); };
@@ -1146,6 +1198,11 @@ menu.addEventListener("click", async e => {
     if (a === "open-logs") await post("/api/open", {kind:"logs"});
     if (a === "pause-all") await post("/api/targets/pauseall", {paused:true});
     if (a === "resume-all") await post("/api/targets/pauseall", {paused:false});
+    // entradas que sólo aparecen en ventanas estrechas (reutilizan los botones de la cabecera)
+    if (a === "scan") openScan();
+    if (a === "trace") openTrace(null, false);
+    if (a === "sound") $("#btnSound").click();
+    if (a === "theme") $("#btnTheme").click();
     if (a === "trash") openTrash();
     if (a === "clear-all") confirmClearAll();
     if (a === "settings") openSettings();
@@ -1171,7 +1228,9 @@ document.addEventListener("keydown", e => {
 });
 window.addEventListener("resize", () => { if (S.loaded) render(); });
 window.addEventListener("pagehide", () => { try { navigator.sendBeacon("/api/bye?token=" + TOKEN, new Blob(["{}"], {type:"application/json"})); } catch(e){} });
-setInterval(() => { const d = new Date(); $("#clock").textContent = d.toLocaleDateString("es", {weekday:"long", day:"numeric", month:"long"}) + " · " + hms(d); }, 1000);
+// reloj corto en una sola línea ("vie, 13 nov · 08:52"); se oculta en ventanas de menos de 1280 px
+function tickClock(){ const d = new Date(); $("#clock").textContent = d.toLocaleDateString("es", {weekday:"short", day:"numeric", month:"short"}) + " · " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+tickClock(); setInterval(tickClock, 15000);
 document.addEventListener("click", () => { if (actx && actx.state === "suspended") actx.resume(); }, {passive:true});
 
 applyTheme("dark"); poll();
