@@ -26,14 +26,15 @@ namespace MonitorIPs
         bool showingBad;
         int ticks;
 
-        public TrayApp(byte[] icoBytes)
+        public TrayApp()
         {
             if (!(SynchronizationContext.Current is WindowsFormsSynchronizationContext))
                 SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
             ui = SynchronizationContext.Current;
 
-            iconOk = LoadIcon(icoBytes);
-            iconBad = WithRedDot(iconOk);
+            int px = SystemInformation.SmallIconSize.Width; // tamaño real de la bandeja (proceso con DPI)
+            iconOk = ToIcon(TrayIcons.Render(px, false));
+            iconBad = ToIcon(TrayIcons.Render(px, true));
 
             var menu = new ContextMenuStrip();
             var miOpen = new ToolStripMenuItem("Abrir monitor", null, (s, e) => Program.OpenOrFocusWindow());
@@ -97,34 +98,82 @@ namespace MonitorIPs
             if (bad != showingBad) { icon.Icon = bad ? iconBad : iconOk; showingBad = bad; }
         }
 
-        static Icon LoadIcon(byte[] ico)
+        static Icon ToIcon(Bitmap bmp)
         {
-            try { if (ico != null) return new Icon(new MemoryStream(ico), SystemInformation.SmallIconSize); }
-            catch { }
-            return SystemIcons.Application;
+            try { return Icon.FromHandle(bmp.GetHicon()); }
+            catch { return SystemIcons.Application; }
+        }
+    }
+
+    /// <summary>
+    /// Dibuja el icono de la bandeja con el mismo diseño que el del .exe (tools/make-icon.ps1):
+    /// cuadrado redondeado con degradado azul-violeta y el trazo de pulso en blanco.
+    /// Se dibuja en vectorial al tamaño real de la bandeja (nítido con cualquier escala de Windows)
+    /// en lugar de reducir el .ico, cuyas imágenes PNG se ven mal a 16-24 px en .NET Framework.
+    /// </summary>
+    public static class TrayIcons
+    {
+        static readonly Color From = Color.FromArgb(255, 109, 140, 255);
+        static readonly Color To   = Color.FromArgb(255, 155, 123, 255);
+        static readonly Color Red  = Color.FromArgb(255, 255, 77, 94);
+
+        /// <summary>alert = true añade un punto rojo pequeño abajo a la derecha (hay IPs caídas).</summary>
+        public static Bitmap Render(int size, bool alert)
+        {
+            const int k = 4; // se dibuja a 4x y se reduce con filtro de alta calidad: bordes suaves
+            int big = size * k;
+            using (var hi = new Bitmap(big, big))
+            {
+                using (var g = Graphics.FromImage(hi))
+                {
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    g.Clear(Color.Transparent);
+                    float s = big;
+                    float m = s * 0.03f;                 // margen mínimo para que no toque el borde
+                    var box = new RectangleF(m, m, s - 2 * m, s - 2 * m);
+                    using (var path = Rounded(box, box.Width * 0.24f))
+                    using (var brush = new LinearGradientBrush(box, From, To, 45f))
+                        g.FillPath(brush, path);
+
+                    // trazo de pulso (mismas coordenadas en rejilla de 24 que el icono del .exe)
+                    Func<float, float, PointF> P = (x, y) => new PointF(m + (x / 24f) * box.Width, m + (y / 24f) * box.Height);
+                    var pts = new[] { P(3.5f, 12.5f), P(7f, 12.5f), P(9.5f, 6f), P(13f, 18.5f), P(15.5f, 12.5f), P(20.5f, 12.5f) };
+                    float w = Math.Max(s * 0.095f, 1.6f * k); // al menos ~1.6 px reales a 16 px
+                    using (var pen = new Pen(Color.White, w) { LineJoin = LineJoin.Round, StartCap = LineCap.Round, EndCap = LineCap.Round })
+                        g.DrawLines(pen, pts);
+
+                    if (alert)
+                    {
+                        float d = s * 0.38f;                       // punto rojo pequeño
+                        var dot = new RectangleF(s - d, s - d, d, d);
+                        float ring = s * 0.045f;                   // aro fino que lo separa del logo
+                        using (var b = new SolidBrush(Color.FromArgb(255, 22, 26, 36)))
+                            g.FillEllipse(b, RectangleF.Inflate(dot, ring, ring));
+                        using (var b = new SolidBrush(Red)) g.FillEllipse(b, dot);
+                    }
+                }
+                var bmp = new Bitmap(size, size);
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.CompositingQuality = CompositingQuality.HighQuality;
+                    g.DrawImage(hi, new Rectangle(0, 0, size, size));
+                }
+                return bmp;
+            }
         }
 
-        /// <summary>Variante del icono con un punto rojo (hay IPs caídas).</summary>
-        static Icon WithRedDot(Icon baseIcon)
+        static GraphicsPath Rounded(RectangleF r, float radius)
         {
-            try
-            {
-                var size = SystemInformation.SmallIconSize;
-                using (var bmp = new Bitmap(size.Width, size.Height))
-                {
-                    using (var g = Graphics.FromImage(bmp))
-                    {
-                        g.SmoothingMode = SmoothingMode.AntiAlias;
-                        g.DrawIcon(baseIcon, new Rectangle(Point.Empty, size));
-                        float d = size.Width * 0.5f;
-                        var r = new RectangleF(size.Width - d, size.Height - d, d - 0.5f, d - 0.5f);
-                        g.FillEllipse(Brushes.White, RectangleF.Inflate(r, 1, 1));
-                        using (var red = new SolidBrush(Color.FromArgb(255, 77, 94))) g.FillEllipse(red, r);
-                    }
-                    return Icon.FromHandle(bmp.GetHicon());
-                }
-            }
-            catch { return baseIcon; }
+            float d = radius * 2;
+            var p = new GraphicsPath();
+            p.AddArc(r.X, r.Y, d, d, 180, 90);
+            p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
+            p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
+            p.CloseFigure();
+            return p;
         }
     }
 

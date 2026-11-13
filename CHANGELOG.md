@@ -2,6 +2,15 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.4.1] - 2026-11-13
+
+### Corregido
+- El icono de la bandeja se veía pixelado y distinto al del programa: el `.ico` guarda sus imágenes en PNG, que .NET Framework reduce mal a 16-24 px. Ahora se dibuja con el mismo diseño del `.exe` y al tamaño real de la bandeja, nítido con cualquier escala de Windows (100 %, 125 %, 150 %…).
+- El aviso de caídas en el icono pasa de un círculo que tapaba medio logo a una insignia roja pequeña en la esquina.
+
+### Cambiado
+- El menú de la bandeja también se ve nítido con escalado de pantalla (el proceso declara su DPI).
+
 ## [1.4.0] - 2026-11-13
 
 ### Añadido
@@ -69,6 +78,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.4.1]: ../../releases/tag/v1.4.1
 [1.4.0]: ../../releases/tag/v1.4.0
 [1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0

@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.4.0.0")]
-[assembly: AssemblyFileVersion("1.4.0.0")]
+[assembly: AssemblyVersion("1.4.1.0")]
+[assembly: AssemblyFileVersion("1.4.1.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.4.0";
+        const string Version = "1.4.1";
         static string token;
         static int port;
         static HttpListener listener;
@@ -39,6 +39,8 @@ namespace MonitorIPs
         static readonly JavaScriptSerializer json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
         static string PortFile { get { return Path.Combine(Path.GetTempPath(), "MonitorIPs.port"); } }
 
+        [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -53,6 +55,7 @@ namespace MonitorIPs
                 return;
             }
 
+            SetProcessDPIAware(); // iconos y menú de la bandeja nítidos con escalado de Windows (125 %, 150 %…)
             System.Windows.Forms.Application.EnableVisualStyles();
             try
             {
@@ -67,7 +70,7 @@ namespace MonitorIPs
                 engine.EventRaised += OnEngineEvent;
                 engine.Start();
                 Autostart.RepairPath();
-                tray = new TrayApp(favicon);
+                tray = new TrayApp();
                 if (!trayMode) OpenWindow(port);
             }
             catch (Exception ex)
