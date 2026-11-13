@@ -4,7 +4,7 @@ Monitor para Windows que vigila varias IPs y servicios a la vez (**ping**, **pue
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.9.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.10.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -18,6 +18,7 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 | **Modo pantalla (NOC)** | Para un monitor de pared: reloj, contadores grandes y disponibilidad de 24 h, con un mosaico que siempre cabe en pantalla y pone **las caídas primero** y en rojo. Mantiene la pantalla encendida y oculta el cursor. Tecla `M` (y `F11` para pantalla completa). |
 | **Detalle** | Gráfica de 1, 5 o 15 min, jitter, enviados/recibidos, último error y consola con el formato de `ping -t`. |
 | **Alertas** | Tras N fallos seguidos (por defecto 3) la IP pasa a *caída*: aviso en pantalla, pitido, contador en el título y notificación de Windows, también con la ventana cerrada. Al recuperarse avisa con la duración de la caída. |
+| **Avisos por Telegram** | Caídas, recuperaciones y certificados por caducar en tu móvil o en un grupo del equipo, con tu propio bot (se configura en 3 pasos desde el menú ⋮ o Ajustes). Agrupa los eventos simultáneos, puede avisar sólo si la caída dura más de X minutos, filtra por grupos y tiene horas de silencio (llegan sin sonido). Sin internet, los avisos esperan y se envían al volver. |
 | **Bandeja e inicio con Windows** | Sigue vigilando en la bandeja al cerrar la ventana y puede arrancar solo al encender el equipo. |
 | **Tracert** | Traza salto a salto en vivo, con nombres DNS opcionales y botón para copiarla en formato `tracert`. |
 | **Escanear red** | Rango `192.168.3.1 - 192.168.3.254`, `192.168.3.1-254` o `192.168.3.0/24` (hasta 4096 IPs). Muestra IP, nombre, MAC y latencia. En la red local detecta también, por ARP, equipos que bloquean el ping. Las detectadas se añaden al monitor con un clic. |
@@ -119,6 +120,7 @@ MonitorIPs.exe (C#, .NET Framework 4)
 | `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y ciclo de vida. |
 | `src/Tray.cs` | Icono de bandeja, menú, notificaciones con la ventana cerrada, enfoque de la ventana e inicio con Windows. |
 | `src/History.cs` | Historial por minuto en disco, cálculo de disponibilidad, caídas y tramos para las gráficas. |
+| `src/Telegram.cs` | Avisos por Telegram: cola con agrupación, retraso mínimo, silencio, reintentos y token cifrado (DPAPI). |
 | `src/Report.cs` | Informe de disponibilidad: HTML para A4 impreso a PDF con Edge en modo headless (o HTML si no se puede). |
 | `src/Checks.cs` | Comprobaciones: ping, puerto TCP y web (HTTP/HTTPS, certificados), y detección de puertos abiertos. |
 | `src/Monitor.cs` | Motor de ping, buffer circular de muestras, estadísticas, detección de caídas, eventos y papelera. |
@@ -137,4 +139,5 @@ MonitorIPs.exe (C#, .NET Framework 4)
 - El servidor escucha sólo en `localhost` en un puerto aleatorio, y cada llamada a la API exige un token generado en cada arranque.
 - No se envía nada tuyo a internet: sólo los pings, conexiones y peticiones web hacia lo que configures.
 - El **aviso de versión nueva** consulta una vez al día la última Release pública de este repositorio en `api.github.com` (sólo lectura, sin cuenta ni datos tuyos). Se puede desactivar en *Ajustes*. Nunca descarga ni ejecuta nada por sí mismo: "Descargar" abre el archivo en tu navegador.
+- **Avisos por Telegram** (sólo si los activas): se envían a `api.telegram.org` con el nombre de la comprobación, su IP o URL, el grupo, la hora y el nombre del equipo, únicamente a los chats que elijas. El token del bot se guarda **cifrado con DPAPI** (ligado a tu usuario de Windows) y nunca vuelve a mostrarse; si copias el portable a otro PC hay que volver a pegarlo.
 - `dist/`, `config.json` y los logs están excluidos del repositorio (`.gitignore`).

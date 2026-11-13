@@ -107,6 +107,13 @@ namespace MonitorIPs
             lock (targets) return targets.FirstOrDefault(x => x.Cfg.Id == id);
         }
 
+        /// <summary>Configuración de una comprobación (para componer avisos), o null si ya no existe.</summary>
+        public TargetConfig ConfigOf(string id)
+        {
+            var rt = Find(id);
+            return rt == null ? null : rt.Cfg;
+        }
+
         // ---------- operaciones (llamadas desde la API) ----------
 
         /// <summary>Añade (id vacío) o edita una IP. save=false para altas en bloque (se guarda una vez al final).</summary>

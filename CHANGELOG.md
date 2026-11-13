@@ -2,6 +2,23 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.10.0] - 2026-11-13
+
+### Añadido
+- **Avisos por Telegram**, desde el menú ⋮ o Ajustes → *Avisos por Telegram*. Se configuran en 3 pasos:
+  1. Conectar tu bot (creado con @BotFather).
+  2. Detectar los chats o grupos.
+  3. Elegir qué avisar.
+- **Mensajes:**
+  - Llegan las caídas (con la causa), las recuperaciones (con la duración) y los certificados por caducar, con IP o URL, grupo y hora.
+  - Los eventos de 10 s se agrupan en un solo mensaje.
+- **Opciones:**
+  - Avisar sólo si la caída dura más de X minutos; si se recupera antes, no llega nada.
+  - Filtro por grupos y horas de silencio, en las que los avisos llegan sin sonido.
+  - Varios chats a la vez y botón de mensaje de prueba.
+- **Sin conexión,** los avisos esperan en cola (hasta 200) y se envían al volver, marcados "con retraso". Se respeta el límite de envío de Telegram.
+- **Seguridad:** el token se guarda cifrado con DPAPI, ligado al usuario de Windows, y nunca se muestra ni sale hacia la interfaz.
+
 ## [1.9.0] - 2026-11-13
 
 ### Añadido
@@ -151,6 +168,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.10.0]: ../../releases/tag/v1.10.0
 [1.9.0]: ../../releases/tag/v1.9.0
 [1.8.0]: ../../releases/tag/v1.8.0
 [1.7.0]: ../../releases/tag/v1.7.0

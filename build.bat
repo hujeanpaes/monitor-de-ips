@@ -14,7 +14,7 @@ if not exist dist mkdir dist
 
 "%CSC%" /nologo /target:winexe /optimize+ /platform:anycpu /out:"dist\MonitorIPs.exe" ^
   /win32icon:"src\app.ico" ^
-  /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll ^
+  /r:System.Web.Extensions.dll /r:System.Windows.Forms.dll /r:System.Security.dll ^
   /resource:"src\web\index.html",index.html ^
   /resource:"src\app.ico",app.ico ^
   src\*.cs
