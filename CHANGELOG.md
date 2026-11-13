@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.3.1] - 2026-11-13
+
+### Corregido
+- En ventanas sin maximizar la cabecera se superponía (título, fecha y filtros encima unos de otros). Ahora se adapta a cualquier tamaño, de 420 px en adelante, sin superposiciones ni desplazamiento horizontal.
+
+### Cambiado
+- Cabecera en dos franjas: arriba identidad y acciones; debajo, filtros de estado como control segmentado y búsqueda de ancho flexible.
+- Al estrechar la ventana se simplifica por pasos: se oculta la fecha, los botones quedan sólo con icono, y en ventanas muy estrechas Escanear, Tracert, Sonido y Tema pasan al menú ⋮.
+- Fecha y hora más cortas, en una sola línea.
+- Detalle, escaneo y tracert se reorganizan en ventanas estrechas (estadísticas en 4 o 2 columnas, botones en una segunda línea).
+
 ## [1.3.0] - 2026-11-13
 
 ### Añadido
@@ -45,5 +56,6 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.3.1]: ../../releases/tag/v1.3.1
 [1.3.0]: ../../releases/tag/v1.3.0
 [1.2.0]: ../../releases/tag/v1.2.0
