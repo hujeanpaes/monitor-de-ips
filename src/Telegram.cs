@@ -44,14 +44,7 @@ namespace MonitorIPs
         static readonly AutoResetEvent wake = new AutoResetEvent(false);
         static readonly JavaScriptSerializer json = new JavaScriptSerializer();
 
-        static string ApiBase
-        {
-            get
-            {
-                string e = Environment.GetEnvironmentVariable("MONITORIPS_TG_API");
-                return string.IsNullOrEmpty(e) ? "https://api.telegram.org" : e.TrimEnd('/');
-            }
-        }
+        static string ApiBase { get { return (Util.TestHook("TG_API") ?? "https://api.telegram.org").TrimEnd('/'); } }
 
         public static void Start(AppConfig c, Func<string, bool> downNow)
         {
@@ -202,31 +195,31 @@ namespace MonitorIPs
                 sb.Append("<b>").Append(string.Join(" · ", head)).Append("</b>\n");
                 foreach (var i in items) sb.Append('\n').Append(Line(i, now));
             }
-            sb.Append("\n\n<i>Monitor de IPs · ").Append(H(Environment.MachineName)).Append("</i>");
+            sb.Append("\n\n<i>Monitor de IPs · ").Append(Util.Html(Environment.MachineName)).Append("</i>");
             return sb.ToString();
         }
 
         static string Single(Item i, long now)
         {
-            string where = "<code>" + H(i.Sub) + "</code> · " + H(i.Kind) + (string.IsNullOrEmpty(i.Group) ? "" : " · " + H(i.Group));
+            string where = "<code>" + Util.Html(i.Sub) + "</code> · " + Util.Html(i.Kind) + (string.IsNullOrEmpty(i.Group) ? "" : " · " + Util.Html(i.Group));
             string late = Late(i, now);
             switch (i.Type)
             {
                 case "down":
-                    return "🔴 <b>" + H(i.Name) + "</b> sin respuesta\n" + where + " · desde las " + Hm(i.T)
-                         + (string.IsNullOrEmpty(i.Detail) ? "" : "\n" + H(i.Detail)) + late;
+                    return "🔴 <b>" + Util.Html(i.Name) + "</b> sin respuesta\n" + where + " · desde las " + Hm(i.T)
+                         + (string.IsNullOrEmpty(i.Detail) ? "" : "\n" + Util.Html(i.Detail)) + late;
                 case "up":
-                    return "🟢 <b>" + H(i.Name) + "</b> recuperada · estuvo caída <b>" + Dur(i.Duration) + "</b>\n" + where + late;
+                    return "🟢 <b>" + Util.Html(i.Name) + "</b> recuperada · estuvo caída <b>" + Util.FormatDuration(i.Duration) + "</b>\n" + where + late;
                 default:
-                    return "🟠 <b>" + H(i.Name) + "</b> · " + H(i.Detail) + "\n" + where + late;
+                    return "🟠 <b>" + Util.Html(i.Name) + "</b> · " + Util.Html(i.Detail) + "\n" + where + late;
             }
         }
 
         static string Line(Item i, long now)
         {
-            string tail = i.Type == "down" ? " · desde las " + Hm(i.T) : i.Type == "up" ? " · caída " + Dur(i.Duration) : " · " + H(i.Detail);
+            string tail = i.Type == "down" ? " · desde las " + Hm(i.T) : i.Type == "up" ? " · caída " + Util.FormatDuration(i.Duration) : " · " + Util.Html(i.Detail);
             string ico = i.Type == "down" ? "🔴" : i.Type == "up" ? "🟢" : "🟠";
-            return ico + " <b>" + H(i.Name) + "</b> · <code>" + H(i.Sub) + "</code>" + tail + Late(i, now);
+            return ico + " <b>" + Util.Html(i.Name) + "</b> · <code>" + Util.Html(i.Sub) + "</code>" + tail + Late(i, now);
         }
 
         /// <summary>Si el aviso sale tarde (sin conexión), lo indica con la hora real.</summary>
@@ -234,16 +227,6 @@ namespace MonitorIPs
 
         static string Hm(long ms) { return Util.FromUnixMs(ms).ToString("HH:mm", CultureInfo.InvariantCulture); }
 
-        static string Dur(double seconds)
-        {
-            var t = TimeSpan.FromSeconds(Math.Max(0, seconds));
-            if (t.TotalDays >= 1) return (int)t.TotalDays + " d " + t.Hours + " h";
-            if (t.TotalHours >= 1) return (int)t.TotalHours + " h " + t.Minutes + " min";
-            if (t.TotalMinutes >= 1) return t.Minutes + " min " + t.Seconds + " s";
-            return t.Seconds + " s";
-        }
-
-        static string H(string s) { return string.IsNullOrEmpty(s) ? "" : s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;"); }
 
         // ------------------------------------------------------------------ API de Telegram
 
@@ -346,7 +329,7 @@ namespace MonitorIPs
             if (chats == null || chats.Count == 0) chats = cfg.TelegramChats;
             if (chats.Count == 0) throw new Exception("Elige al menos un chat.");
             string text = "✅ <b>Mensaje de prueba</b>\nLos avisos de caídas y recuperaciones llegarán a este chat." +
-                          "\n\n<i>Monitor de IPs · " + H(Environment.MachineName) + "</i>";
+                          "\n\n<i>Monitor de IPs · " + Util.Html(Environment.MachineName) + "</i>";
             var errors = new List<string>(); int ok = 0;
             foreach (var c in chats)
             {
