@@ -4,7 +4,7 @@ Monitor para Windows que vigila varias IPs y servicios a la vez (**ping**, **pue
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.8.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.9.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -24,6 +24,7 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 | **Organización** | Grupos, búsqueda por texto o por rango de IPs, filtros por estado (todas, en línea, caídas, pausadas) y pausa individual o global. |
 | **Papelera** | Las IPs eliminadas, una a una o todas, se pueden recuperar durante 30 días. Las acciones de borrado piden confirmación y se pueden deshacer. |
 | **Historial y disponibilidad** | Historial por minuto de cada IP (24 h, 7 días, 30 días): % de disponibilidad, caídas, tiempo caído y latencias, con gráfica y lista de caídas. Vista "Disponibilidad" de todas las IPs con exporte a CSV. |
+| **Informe PDF** | Informe de disponibilidad listo para enviar: mes anterior, este mes, 24 h, 7 o 30 días, o fechas a elegir; de todas las comprobaciones o de un grupo. Incluye resumen (disponibilidad global, caídas, tiempo caído, peor comprobación, latencia), gráfica por día u hora, detalle por comprobación y registro de caídas. Se genera con el Edge del equipo, sin instalar nada. |
 | **Logs y exportes** | Log diario automático de eventos en CSV y exportación de eventos, resumen por IP y latencias (separador `;`, se abre directo en Excel). |
 | **Interfaz** | Tema oscuro y claro, atajos de teclado (`N` añadir, `Ctrl+F` buscar, `V` tarjetas/lista, `M` modo pantalla) y diseño adaptable. |
 
@@ -74,7 +75,7 @@ Si prefieres que cerrar la ventana cierre el monitor, desactiva *Ajustes → Seg
 | `config.json` | IPs, nombres, grupos, intervalos, papelera y ajustes (también la vista, el orden de la lista y el modo pantalla). Se puede editar a mano. |
 | `history\AAAA-MM-DD.csv` | Historial por minuto e IP (disponibilidad y latencias). Se conserva 90 días por defecto (ajustable). |
 | `logs\eventos-AAAA-MM-DD.csv` | Caídas, recuperaciones y cambios del día. |
-| `exports\` | Archivos exportados desde el menú ⋮. |
+| `exports\` | Archivos exportados desde el menú ⋮ e informes PDF. |
 
 Para llevar tus IPs a otro PC, copia `config.json` a la carpeta de datos del otro equipo. *Ajustes* muestra la carpeta en uso y si la copia es instalada o portable.
 
@@ -118,6 +119,7 @@ MonitorIPs.exe (C#, .NET Framework 4)
 | `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y ciclo de vida. |
 | `src/Tray.cs` | Icono de bandeja, menú, notificaciones con la ventana cerrada, enfoque de la ventana e inicio con Windows. |
 | `src/History.cs` | Historial por minuto en disco, cálculo de disponibilidad, caídas y tramos para las gráficas. |
+| `src/Report.cs` | Informe de disponibilidad: HTML para A4 impreso a PDF con Edge en modo headless (o HTML si no se puede). |
 | `src/Checks.cs` | Comprobaciones: ping, puerto TCP y web (HTTP/HTTPS, certificados), y detección de puertos abiertos. |
 | `src/Monitor.cs` | Motor de ping, buffer circular de muestras, estadísticas, detección de caídas, eventos y papelera. |
 | `src/Tracer.cs` | Tracert mediante ping con TTL creciente. |
