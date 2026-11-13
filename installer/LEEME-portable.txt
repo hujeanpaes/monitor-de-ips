@@ -1,0 +1,19 @@
+MONITOR DE IPs - VERSIÓN PORTABLE
+=================================
+
+1. Descomprime esta carpeta donde quieras (escritorio, USB, red...).
+2. Abre MonitorIPs.exe con doble clic. No necesita instalación.
+
+La primera vez Windows puede mostrar "Windows protegió su PC" porque el
+ejecutable no tiene firma digital: pulsa "Más información" y luego
+"Ejecutar de todas formas".
+
+DATOS
+- config.json, logs\ y exports\ se crean junto a MonitorIPs.exe.
+- Para llevar tus IPs a otro PC, copia config.json junto al .exe.
+- Si la carpeta no permite escribir, se usa AppData\Roaming\MonitorIPs.
+
+REQUISITOS
+Windows 10 u 11 (incluyen .NET Framework 4 y Microsoft Edge).
+
+Proyecto: https://github.com/hujeanpaes/monitor-de-ips

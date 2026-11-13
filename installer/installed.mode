@@ -1,0 +1,3 @@
+Este archivo lo coloca el instalador de Monitor de IPs.
+Indica que es la versión instalada: los datos (config.json, logs, exports) se guardan en %APPDATA%\MonitorIPs.
+Si lo borras, el programa funcionará en modo portable y guardará los datos junto al .exe.
