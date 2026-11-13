@@ -392,6 +392,7 @@ namespace MonitorIPs
                     if (b.ContainsKey("screenMode")) config.ScreenMode = Bool(b, "screenMode");
                     if (b.ContainsKey("closeToTray")) config.CloseToTray = Bool(b, "closeToTray");
                     if (b.ContainsKey("updateCheck")) config.UpdateCheck = Bool(b, "updateCheck");
+                    if (b.ContainsKey("askSaveLocation")) config.AskSaveLocation = Bool(b, "askSaveLocation");
                     if (b.ContainsKey("historyDays")) { config.HistoryDays = (int)Num(b, "historyDays", 90); config.Normalize(); History.Purge(); }
                     if (b.ContainsKey("autostart")) Autostart.Set(Bool(b, "autostart"));
                     config.Normalize();
@@ -405,7 +406,11 @@ namespace MonitorIPs
                     Tracer.CancelJob(Str(b, "id"));
                     return Ok();
                 case "/api/export":
-                    return new Dictionary<string, object> { { "path", Export(Str(b, "kind"), Str(b, "range")) } };
+                    return Export(Str(b, "kind"), Str(b, "range"));
+                case "/api/file/open":
+                    return OpenSaved(Str(b, "path"), false);
+                case "/api/file/reveal":
+                    return OpenSaved(Str(b, "path"), true);
                 case "/api/report":
                     return MakeReport(b);
                 case "/api/telegram":
@@ -488,7 +493,7 @@ namespace MonitorIPs
                 { "closeToTray", config.CloseToTray }, { "autostart", Autostart.IsEnabled() }, { "trayAlerts", trayAlerts },
                 { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() }, { "updateCheck", config.UpdateCheck },
                 { "view", config.View }, { "listSort", config.ListSort }, { "screenMode", config.ScreenMode },
-                { "reportTitle", config.ReportTitle },
+                { "reportTitle", config.ReportTitle }, { "reportOpenAfter", config.ReportOpenAfter }, { "askSaveLocation", config.AskSaveLocation },
                 { "telegram", new Dictionary<string, object> { { "enabled", config.TelegramEnabled }, { "chats", config.TelegramChats.Count }, { "bot", config.TelegramBot } } },
             };
         }
@@ -660,18 +665,63 @@ namespace MonitorIPs
             var targets = engine.SummaryAll().Where(t => group == null || (string)t["group"] == group).ToList();
             if (targets.Count == 0) throw new Exception("No hay comprobaciones en ese alcance.");
 
+            if (b.ContainsKey("openAfter") && Bool(b, "openAfter") != config.ReportOpenAfter) { config.ReportOpenAfter = Bool(b, "openAfter"); Store.Save(config); }
+
+            // primero se elige dónde guardarlo (los errores de periodo ya se han comprobado arriba)
+            string target = ChooseTarget("informe_" + tag + "_" + DateTime.Now.ToString("yyyy-MM-dd_HHmm") + ".pdf", "Documento PDF (*.pdf)|*.pdf", "pdf");
+            if (target == null) return Canceled();
+
             var res = Report.Generate(new Report.Options
             {
                 Title = title != "" ? title : "Informe de disponibilidad",
                 PeriodLabel = label,
                 Scope = group == null ? "Todas las comprobaciones" : (group == "" ? "Sin grupo" : "Grupo «" + group + "»"),
-                Version = Version, OutDir = Store.ExportsDir,
+                Version = Version, OutPath = target,
                 Browser = Util.TestHook("NOPDF") == "1" ? null : FindBrowser(),   // la variable permite probar el plan B (HTML)
-                FileBase = "informe_" + tag + "_" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss"),
                 FromMin = from, ToMin = to, Daily = daily, Targets = targets, DownNow = engine.IsDown,
             });
-            if (!b.ContainsKey("open") || Bool(b, "open")) try { Process.Start(res.Path); } catch { }
+            Remember(res.Path);
+            bool open = b.ContainsKey("open") ? Bool(b, "open") : config.ReportOpenAfter;   // "open" sólo lo usan las pruebas
+            if (open) try { Process.Start(res.Path); } catch { }
             return new Dictionary<string, object> { { "path", res.Path }, { "pdf", res.Pdf } };
+        }
+
+        // ------------------------------------------------------------------ guardar exportes
+
+        /// <summary>Archivos guardados en esta sesión: los únicos que /api/file/open y /reveal aceptan.</summary>
+        static readonly HashSet<string> savedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        static void Remember(string path) { lock (savedFiles) savedFiles.Add(Path.GetFullPath(path)); }
+
+        static Dictionary<string, object> Canceled() { return new Dictionary<string, object> { { "canceled", true } }; }
+
+        /// <summary>
+        /// Ruta donde guardar un exporte: "Guardar como" en la última carpeta usada (por defecto, exports\),
+        /// o directamente en exports\ si el ajuste "Preguntar dónde guardar" está desactivado. Null = cancelado.
+        /// </summary>
+        static string ChooseTarget(string fileName, string filter, string ext)
+        {
+            Directory.CreateDirectory(Store.ExportsDir);
+            if (!config.AskSaveLocation) return Path.Combine(Store.ExportsDir, fileName);
+            string dir = !string.IsNullOrEmpty(config.LastExportDir) && Directory.Exists(config.LastExportDir) ? config.LastExportDir : Store.ExportsDir;
+            string path = SaveDialog.Ask(fileName, filter, ext, dir);
+            if (path == null) return null;
+            string chosen = Path.GetDirectoryName(path);
+            if (!string.Equals(chosen, config.LastExportDir, StringComparison.OrdinalIgnoreCase)) { config.LastExportDir = chosen; Store.Save(config); }
+            return path;
+        }
+
+        /// <summary>Abre o muestra en el Explorador un archivo guardado por el monitor en esta sesión (nunca una ruta cualquiera).</summary>
+        static Dictionary<string, object> OpenSaved(string path, bool reveal)
+        {
+            string full;
+            try { full = Path.GetFullPath(path ?? ""); } catch { throw new Exception("Ruta no válida."); }
+            bool known; lock (savedFiles) known = savedFiles.Contains(full);
+            if (!known) throw new Exception("Sólo se pueden abrir archivos guardados desde el monitor.");
+            if (!File.Exists(full)) throw new Exception("El archivo ya no existe: " + full);
+            if (reveal) Process.Start("explorer.exe", "/select,\"" + full + "\"");
+            else Process.Start(full);
+            return Ok();
         }
 
         static List<TelegramChat> Chats(object o)
@@ -733,10 +783,10 @@ namespace MonitorIPs
             }).ToList();
         }
 
-        static string Export(string kind, string range)
+        /// <summary>Exporta a CSV (eventos, resumen, latencias o disponibilidad) donde elija el usuario.</summary>
+        static Dictionary<string, object> Export(string kind, string range)
         {
-            Directory.CreateDirectory(Store.ExportsDir);
-            string stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
+            string stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
             string file;
             var sb = new StringBuilder();
             if (kind == "samples")
@@ -779,10 +829,11 @@ namespace MonitorIPs
                         e.Duration > 0 ? ((long)e.Duration).ToString() : "", e.Detail));
                 }
             }
-            string path = Path.Combine(Store.ExportsDir, file);
-            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));
-            Process.Start("explorer.exe", "/select,\"" + path + "\"");
-            return path;
+            string path = ChooseTarget(file, "CSV para Excel (*.csv)|*.csv", "csv");
+            if (path == null) return Canceled();
+            File.WriteAllText(path, sb.ToString(), new UTF8Encoding(true));   // con BOM: Excel abre bien las tildes
+            Remember(path);
+            return new Dictionary<string, object> { { "path", path } };
         }
 
         static object Neg(object v) { return Convert.ToDouble(v) < 0 ? "" : v; }

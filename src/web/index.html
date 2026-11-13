@@ -118,7 +118,10 @@ body{display:flex;flex-direction:column}
 .ti .when{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
 .ti .when.soon{color:var(--warn)}
 .trash-empty{padding:40px 10px;text-align:center;color:var(--dim)}
-.toast .act{margin-left:auto;align-self:center;border:1px solid var(--border2);background:var(--surface2);border-radius:8px;padding:4px 10px;font-weight:600;cursor:pointer;white-space:nowrap}
+.toast .act{border:1px solid var(--border2);background:var(--surface2);border-radius:8px;padding:4px 10px;font-weight:600;cursor:pointer;white-space:nowrap}
+.toast{flex-wrap:wrap}
+.toast .acts{flex:1 1 100%;display:flex;gap:6px;justify-content:flex-end;margin-top:-2px}
+.toast .t2{word-break:break-all}
 .toast .act:hover{background:var(--hover)}
 
 /* ---------- layout ---------- */
@@ -731,6 +734,7 @@ main{container-type:inline-size}
       <div class="switch"><div>Seguir en la bandeja al cerrar<small>Al cerrar la ventana el monitor sigue vigilando junto al reloj y avisa de las caídas</small></div><input type="checkbox" class="tg" id="sTray"></div>
       <div class="switch"><div>Iniciar con Windows<small>Arranca en la bandeja al encender el equipo, sin abrir la ventana</small></div><input type="checkbox" class="tg" id="sAuto"></div>
       <div class="switch"><div>Buscar actualizaciones automáticamente<small id="sUpdState">Consulta GitHub al arrancar y una vez al día</small></div><div style="display:flex;gap:8px;align-items:center"><button type="button" class="btn sm" id="sUpdNow">Buscar ahora</button><input type="checkbox" class="tg" id="sUpd"></div></div>
+      <div class="switch"><div>Preguntar dónde guardar los exportes<small>CSV e informes PDF abren «Guardar como». Desactivado, se guardan directamente en la carpeta de exportes</small></div><input type="checkbox" class="tg" id="sAsk"></div>
       <div class="switch"><div>Avisos por Telegram<small id="sTgState">Recibe las caídas y recuperaciones en el móvil</small></div><button type="button" class="btn sm" id="sTg">Configurar…</button></div>
       <div class="switch"><div>Probar alerta<small>Escucha cómo suena una caída</small></div><button type="button" class="btn sm" id="sTest">Probar</button></div>
       <div class="field" style="margin-top:12px"><label>Carpeta de datos</label><div class="hint" id="sDir" style="font-family:var(--mono);word-break:break-all"></div></div>
@@ -843,9 +847,10 @@ main{container-type:inline-size}
       </div>
       <div class="field"><label>Comprobaciones</label><select class="inp" id="rGroup"></select></div>
       <div class="field"><label>Título (opcional)</label><input class="inp" id="rTitle" maxlength="120" placeholder="Informe de disponibilidad" autocomplete="off"></div>
-      <span class="hint">Incluye resumen, gráfica, detalle por comprobación y registro de caídas. Se guarda en la carpeta de exportes y se abre al terminar.</span>
+      <label class="tg-inl" style="margin:2px 0 10px"><input type="checkbox" class="chk" id="rOpen">Abrir el PDF al terminar</label>
+      <span class="hint">Incluye resumen, gráfica, detalle por comprobación y registro de caídas. Al pulsar «Guardar PDF…» eliges el nombre y la carpeta.</span>
     </div>
-    <div class="dlg-f"><span class="spacer"></span><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary" id="rGo">Generar PDF</button></div>
+    <div class="dlg-f"><span class="spacer"></span><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary" id="rGo">Guardar PDF…</button></div>
   </form>
 </dialog>
 
@@ -1366,7 +1371,11 @@ function toast(kind, t1, t2, ms, action){
   el.innerHTML = `<div style="color:var(--${kind==="bad"?"bad":kind==="ok"?"ok":"accent"})">${kind==="bad"?ICON.down:kind==="ok"?ICON.up:ICON.info}</div><div style="min-width:0"><div class="t1">${esc(t1)}</div>${t2?`<div class="t2">${esc(t2)}</div>`:""}</div>`;
   $("#toasts").appendChild(el);
   const kill = () => { el.classList.add("out"); setTimeout(() => el.remove(), 300); };
-  if (action){ const b = document.createElement("button"); b.className = "act"; b.textContent = action.label; b.onclick = e => { e.stopPropagation(); kill(); action.fn(); }; el.appendChild(b); }
+  if (action){
+    const box = document.createElement("div"); box.className = "acts";
+    for (const a of [].concat(action)){ const b = document.createElement("button"); b.className = "act"; b.textContent = a.label; b.onclick = e => { e.stopPropagation(); kill(); a.fn(); }; box.appendChild(b); }
+    el.appendChild(box);
+  }
   el.onclick = kill; setTimeout(kill, ms || (kind === "bad" ? 9000 : 5000));
   while ($("#toasts").children.length > 5) $("#toasts").firstChild.remove();
 }
@@ -2015,10 +2024,26 @@ $("#aBody").addEventListener("click", e => {
   H.range = AV.range; $$("#hRange button").forEach(x => x.classList.toggle("on", x.dataset.r === H.range));
   openDetail(tr.dataset.id); setDetailTab("hist");
 });
-$("#aExport").onclick = async () => {
-  try { const r = await post("/api/export", {kind:"availability", range:AV.range}); toast("ok", "Informe exportado", r.path, 8000); }
-  catch(e){ toast("bad", "No se pudo exportar", e.message); }
-};
+// ------------------------------------------------------------ guardar exportes ("Guardar como" de Windows)
+const baseName = p => String(p).split(/[\\/]/).pop();
+const dirName = p => String(p).replace(/[\\/][^\\/]*$/, "");
+/** Aviso tras guardar, con "Abrir" y "Mostrar en la carpeta" (el servidor sólo acepta archivos que él mismo guardó). */
+function toastSaved(path, t1){
+  toast("ok", t1 || "Guardado: " + baseName(path), dirName(path), 12000, [
+    {label:"Abrir", fn:() => post("/api/file/open", {path}).catch(e => toast("bad", "No se pudo abrir", e.message))},
+    {label:"Mostrar en la carpeta", fn:() => post("/api/file/reveal", {path}).catch(e => toast("bad", "No se pudo mostrar", e.message))},
+  ]);
+}
+/** Exporta un CSV: el programa abre "Guardar como" (o guarda directo en exports si así está en Ajustes). */
+async function saveExport(body, btn){
+  if (btn) btn.disabled = true;
+  try {
+    const r = await post("/api/export", body);
+    if (!r.canceled) toastSaved(r.path);
+  } catch(e){ toast("bad", "No se pudo exportar", e.message, 9000); }
+  if (btn) btn.disabled = false;
+}
+$("#aExport").onclick = () => saveExport({kind:"availability", range:AV.range}, $("#aExport"));
 $("#btnAvail").onclick = openAvail;
 
 // ------------------------------------------------------------ informe PDF
@@ -2040,7 +2065,7 @@ function openReport(){
   const t = new Date(), min = new Date(t); min.setDate(t.getDate() - S.settings.historyDays);
   for (const el of [$("#rFrom"), $("#rTo")]){ el.min = isoDay(min); el.max = isoDay(t); }
   if (!$("#rFrom").value){ const a = new Date(t); a.setDate(t.getDate() - 6); $("#rFrom").value = isoDay(a); $("#rTo").value = isoDay(t); }
-  $("#rTitle").value = S.settings.reportTitle || "";
+  $("#rTitle").value = S.settings.reportTitle || ""; $("#rOpen").checked = S.settings.reportOpenAfter !== false;
   $$("#rPeriod button").forEach(b => b.classList.toggle("on", b.dataset.p === RP.period));
   reportHint();
   $("#dlgReport").showModal();
@@ -2051,17 +2076,18 @@ $("#fReport").addEventListener("submit", async e => {
   e.preventDefault();
   if (RP.busy) return;
   const g = $("#rGroup").value, go = $("#rGo");
-  const body = {period:RP.period, title:$("#rTitle").value.trim(), group: g === "*" ? null : g};
+  const body = {period:RP.period, title:$("#rTitle").value.trim(), group: g === "*" ? null : g, openAfter:$("#rOpen").checked};
   if (RP.period === "custom"){ body.from = $("#rFrom").value; body.to = $("#rTo").value; }
-  RP.busy = true; go.disabled = true; go.textContent = "Generando…";
+  RP.busy = true; go.disabled = true; go.textContent = "Un momento…";
   try {
     const r = await post("/api/report", body);
-    $("#dlgReport").close();
-    const open = {label:"Abrir carpeta", fn:() => post("/api/open", {kind:"exports"}).catch(()=>{})};
-    if (r.pdf) toast("ok", "Informe PDF generado", r.path, 10000, open);
-    else toast("info", "Informe guardado como página web", "No se pudo crear el PDF con Edge: se abrió en el navegador; usa Ctrl+P → Guardar como PDF.", 14000, open);
+    if (!r.canceled){
+      $("#dlgReport").close();
+      if (r.pdf) toastSaved(r.path, "Informe guardado: " + baseName(r.path));
+      else { toastSaved(r.path, "Guardado como página web: " + baseName(r.path)); toast("info", "No se pudo crear el PDF con Edge", "Ábrelo y usa Ctrl+P → Guardar como PDF.", 14000); }
+    }
   } catch(err){ toast("bad", "No se pudo generar el informe", err.message, 10000); }
-  RP.busy = false; go.disabled = false; go.textContent = "Generar PDF";
+  RP.busy = false; go.disabled = false; go.textContent = "Guardar PDF…";
 });
 
 // ------------------------------------------------------------ tracert
@@ -2120,7 +2146,7 @@ function openSettings(){
   const s = S.settings;
   $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
   $("#sHistDays").value = s.historyDays; $("#sHistHint").textContent = "Disponibilidad y latencias por minuto (ocupa " + (s.historySize / 1048576).toLocaleString("es", {maximumFractionDigits:1}) + " MB). Lo más antiguo se borra solo.";
-  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sUpd").checked = s.updateCheck; refreshUpdateState(); $("#sTgState").textContent = tgStateText(); $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
+  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sUpd").checked = s.updateCheck; $("#sAsk").checked = s.askSaveLocation !== false; refreshUpdateState(); $("#sTgState").textContent = tgStateText(); $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
   $("#dlgSettings").showModal();
 }
 // ------------------------------------------------------------ avisos por Telegram
@@ -2218,7 +2244,7 @@ $("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notific
 $("#sTest").onclick = () => { const was = S.settings.sound; S.settings.sound = true; beep("down"); S.settings.sound = was; toast("bad", "Ejemplo: Router sede sin respuesta", "10.0.0.1 · Tiempo de espera agotado"); };
 $("#fSettings").addEventListener("submit", async ev => {
   ev.preventDefault();
-  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, historyDays:+$("#sHistDays").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked, updateCheck:$("#sUpd").checked});
+  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, historyDays:+$("#sHistDays").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked, updateCheck:$("#sUpd").checked, askSaveLocation:$("#sAsk").checked});
   applySettingsUI(); $("#dlgSettings").close(); toast("ok", "Ajustes guardados"); render();
 });
 
@@ -2230,7 +2256,7 @@ menu.addEventListener("click", async e => {
   const b = e.target.closest("button"); if (!b) return; menu.classList.remove("open");
   const a = b.dataset.act;
   try {
-    if (a.startsWith("exp-")) { const r = await post("/api/export", {kind:a.slice(4)}); toast("ok", "Archivo exportado", r.path, 8000); }
+    if (a.startsWith("exp-")) await saveExport({kind:a.slice(4)});
     if (a === "open-logs") await post("/api/open", {kind:"logs"});
     if (a === "pause-all") await post("/api/targets/pauseall", {paused:true});
     if (a === "resume-all") await post("/api/targets/pauseall", {paused:false});

@@ -176,6 +176,12 @@ namespace MonitorIPs
         public bool ScreenMode { get; set; }
         /// <summary>Último título usado en el informe PDF.</summary>
         public string ReportTitle { get; set; }
+        /// <summary>Abrir el informe PDF al terminar de generarlo.</summary>
+        public bool ReportOpenAfter { get; set; }
+        /// <summary>Al exportar, preguntar dónde guardar ("Guardar como"); si es false, se guarda directo en exports\.</summary>
+        public bool AskSaveLocation { get; set; }
+        /// <summary>Última carpeta elegida en "Guardar como" (vacío = carpeta de exportes).</summary>
+        public string LastExportDir { get; set; }
 
         // ---- avisos por Telegram
         public bool TelegramEnabled { get; set; }
@@ -214,6 +220,7 @@ namespace MonitorIPs
             View = "cards";
             ListSort = "";
             ReportTitle = "";
+            ReportOpenAfter = true; AskSaveLocation = true; LastExportDir = "";
             TelegramTokenEnc = ""; TelegramBot = "";
             TelegramChats = new List<TelegramChat>();
             TelegramDown = true; TelegramUp = true; TelegramCert = true;

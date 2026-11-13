@@ -192,6 +192,16 @@ namespace MonitorIPs
 
         public static bool TryFocus()
         {
+            IntPtr found = Find();
+            if (found == IntPtr.Zero) return false;
+            if (IsIconic(found)) ShowWindow(found, SW_RESTORE);
+            SetForegroundWindow(found);
+            return true;
+        }
+
+        /// <summary>Ventana del monitor (título "Monitor de IPs" en Edge/Chrome/Brave), o IntPtr.Zero.</summary>
+        public static IntPtr Find()
+        {
             IntPtr found = IntPtr.Zero;
             try
             {
@@ -210,10 +220,7 @@ namespace MonitorIPs
                 }, IntPtr.Zero);
             }
             catch { }
-            if (found == IntPtr.Zero) return false;
-            if (IsIconic(found)) ShowWindow(found, SW_RESTORE);
-            SetForegroundWindow(found);
-            return true;
+            return found;
         }
     }
 
