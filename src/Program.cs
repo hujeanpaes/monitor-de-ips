@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.4.1.0")]
-[assembly: AssemblyFileVersion("1.4.1.0")]
+[assembly: AssemblyVersion("1.5.0.0")]
+[assembly: AssemblyFileVersion("1.5.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.4.1";
+        const string Version = "1.5.0";
         static string token;
         static int port;
         static HttpListener listener;
@@ -69,6 +69,7 @@ namespace MonitorIPs
                 engine = new MonitorEngine(config);
                 engine.EventRaised += OnEngineEvent;
                 engine.Start();
+                History.Start(Store.HistoryDir, () => config.HistoryDays);
                 Autostart.RepairPath();
                 tray = new TrayApp();
                 if (!trayMode) OpenWindow(port);
@@ -84,6 +85,7 @@ namespace MonitorIPs
             System.Windows.Forms.Application.Run(tray);
 
             engine.StopAll();
+            History.Stop();
             Store.Save(config);
             try { listener.Stop(); } catch { }
             try { File.Delete(PortFile); } catch { }
@@ -366,6 +368,7 @@ namespace MonitorIPs
                     if (b.ContainsKey("showEvents")) config.ShowEvents = Bool(b, "showEvents");
                     if (b.ContainsKey("theme")) config.Theme = Str(b, "theme");
                     if (b.ContainsKey("closeToTray")) config.CloseToTray = Bool(b, "closeToTray");
+                    if (b.ContainsKey("historyDays")) { config.HistoryDays = (int)Num(b, "historyDays", 90); config.Normalize(); History.Purge(); }
                     if (b.ContainsKey("autostart")) Autostart.Set(Bool(b, "autostart"));
                     config.Normalize();
                     Store.Save(config);
@@ -378,7 +381,11 @@ namespace MonitorIPs
                     Tracer.CancelJob(Str(b, "id"));
                     return Ok();
                 case "/api/export":
-                    return new Dictionary<string, object> { { "path", Export(Str(b, "kind")) } };
+                    return new Dictionary<string, object> { { "path", Export(Str(b, "kind"), Str(b, "range")) } };
+                case "/api/history":
+                    return History.ForTarget(q["id"] ?? "", Range(q["range"]), engine.IsDown(q["id"] ?? ""));
+                case "/api/availability":
+                    return new Dictionary<string, object> { { "range", Range(q["range"]) }, { "items", Availability(Range(q["range"])) } };
                 case "/api/open":
                 {
                     string kind = Str(b, "kind");
@@ -412,6 +419,7 @@ namespace MonitorIPs
                 { "sound", config.Sound }, { "notify", config.Notify }, { "theme", config.Theme }, { "showEvents", config.ShowEvents },
                 { "dataDir", Store.DataDir }, { "version", Version }, { "installed", Store.Installed },
                 { "closeToTray", config.CloseToTray }, { "autostart", Autostart.IsEnabled() }, { "trayAlerts", trayAlerts },
+                { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() },
             };
         }
 
@@ -468,7 +476,23 @@ namespace MonitorIPs
             catch { return false; }
         }
 
-        static string Export(string kind)
+        static string Range(string r) { return r == "7d" || r == "30d" ? r : "24h"; }
+        static string RangeLabel(string r) { return r == "30d" ? "Ultimos 30 dias" : r == "7d" ? "Ultimos 7 dias" : "Ultimas 24 horas"; }
+
+        /// <summary>Disponibilidad de todas las IPs monitoreadas en el rango (vista "Disponibilidad" y exporte).</summary>
+        static List<Dictionary<string, object>> Availability(string range)
+        {
+            var targets = engine.SummaryAll();
+            var stats = History.ForTargets(targets.Select(t => (string)t["id"]), range, engine.IsDown);
+            return targets.Select(t =>
+            {
+                var d = new Dictionary<string, object>(stats[(string)t["id"]]);
+                d["id"] = t["id"]; d["name"] = t["name"]; d["host"] = t["host"]; d["group"] = t["group"]; d["state"] = t["state"];
+                return d;
+            }).ToList();
+        }
+
+        static string Export(string kind, string range)
         {
             Directory.CreateDirectory(Store.ExportsDir);
             string stamp = DateTime.Now.ToString("yyyy-MM-dd_HHmmss");
@@ -485,6 +509,15 @@ namespace MonitorIPs
                         sb.AppendLine(Util.Csv(d.ToString("yyyy-MM-dd"), d.ToString("HH:mm:ss.fff"), kv.Key.Name, kv.Key.Host, kv.Key.Group,
                             s[2] >= 0 ? s[2].ToString() : "", s[2] >= 0 ? s[3].ToString() : "", s[2] >= 0 ? "OK" : "SIN RESPUESTA"));
                     }
+            }
+            else if (kind == "availability")
+            {
+                range = Range(range);
+                file = "disponibilidad_" + range + "_" + stamp + ".csv";
+                sb.AppendLine("Nombre;Host;Grupo;Disponibilidad_%;Caidas;Tiempo_caido_min;Caida_mas_larga_min;Latencia_media_ms;Latencia_max_ms;Perdida_%;Minutos_vigilados;Periodo");
+                foreach (var t in Availability(range))
+                    sb.AppendLine(Util.Csv(t["name"], t["host"], t["group"], t["availability"] ?? "", t["outages"], t["downtime"], t["longest"],
+                        Neg(t["avg"]), Neg(t["max"]), t["loss"], t["minutes"], RangeLabel(range)));
             }
             else if (kind == "summary")
             {

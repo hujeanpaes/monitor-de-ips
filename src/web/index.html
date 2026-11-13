@@ -233,6 +233,29 @@ textarea.inp{height:150px;padding:10px 12px;resize:vertical;font-family:var(--mo
 .d-stat{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
 .d-stat label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:650}
 .d-stat b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+/* historial y disponibilidad */
+.h-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.h-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
+.h-kpi label{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);font-weight:650}
+.h-kpi b{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.h-kpi small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+#hCanvas{display:block;width:100%;height:230px}
+.h-out{margin-top:14px}
+#dlgAvail{width:980px}
+.a-sum{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px;color:var(--muted);font-size:13px}
+.a-sum b{color:var(--text);font-variant-numeric:tabular-nums}
+.a-tbl th[data-k]{cursor:pointer;user-select:none;white-space:nowrap}
+.a-tbl th[data-k]:hover{color:var(--text)}
+.a-tbl th.sorted::after{content:" ▾"}
+.a-tbl th.sorted.asc::after{content:" ▴"}
+.a-tbl tbody tr{cursor:pointer}
+.a-tbl tbody tr:hover td{background:var(--hover)}
+.a-bar{display:flex;align-items:center;gap:10px}
+.a-bar .tr{flex:1;height:7px;border-radius:4px;background:var(--bg2);border:1px solid var(--border);overflow:hidden;min-width:60px}
+.a-bar .tr i{display:block;height:100%}
+.a-bar b{min-width:62px;text-align:right;font-variant-numeric:tabular-nums}
+.a-nm b{display:block;font-weight:600}
+.a-nm small{color:var(--muted);font-family:var(--mono);font-size:12px}
 .d-chart{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 10px 6px;position:relative}
 .d-chart canvas{display:block;width:100%;height:240px}
 .d-tools{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -282,6 +305,7 @@ tr.final td{background:var(--ok-soft)}
   .actions .btn:not(.primary){padding:0 10px}
   aside.events{position:absolute;right:0;top:0;bottom:0;z-index:40;box-shadow:var(--shadow)}
   .d-stats{grid-template-columns:repeat(4,1fr)}
+  .h-kpis{grid-template-columns:repeat(3,1fr)}
 }
 @media (max-width:440px){
   .pill .pl{display:none}
@@ -301,6 +325,14 @@ tr.final td{background:var(--ok-soft)}
   main{padding:14px 12px 30px}
   aside.events{width:min(340px,100%)}
   .d-stats{grid-template-columns:repeat(2,1fr)}
+  .h-kpis{grid-template-columns:repeat(2,1fr)}
+  .a-tbl th:nth-child(2),.a-tbl td:nth-child(2),.a-tbl th:nth-child(5),.a-tbl td:nth-child(5),.a-tbl th:nth-child(6),.a-tbl td:nth-child(6){display:none}
+  .a-tbl th[data-k="availability"]{width:auto !important}
+  .a-bar .tr{min-width:36px} .a-bar b{min-width:0}
+  #dlgAvail .dlg-h{flex-wrap:wrap;row-gap:10px}
+  #dlgAvail .dlg-h h3{flex:1 1 calc(100% - 50px)}
+  #dlgAvail .dlg-h .x{order:1}
+  #dlgAvail .dlg-h .seg,#dlgAvail .dlg-h .btn{order:2}
   #dlgDetail .dlg-h{flex-wrap:wrap;row-gap:10px}
   #dlgDetail .dlg-h > div{flex:1 1 calc(100% - 70px) !important}  /* fila 1: punto + título + cerrar (pisa el flex:1 en línea) */
   #dlgDetail .dlg-h .x{order:1}
@@ -317,6 +349,7 @@ tr.final td{background:var(--ok-soft)}
   <div class="spacer"></div>
   <div class="actions">
     <button class="btn primary" id="btnAdd" title="Añadir IP (tecla N)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="lbl">Añadir IP</span></button>
+    <button class="btn wide-only" id="btnAvail" title="Disponibilidad de todas las IPs (24 h / 7 días / 30 días)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg><span class="lbl">Disponibilidad</span></button>
     <button class="btn wide-only" id="btnScan" title="Descubrir IPs activas en un rango"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12h2M17 12h2"/></svg><span class="lbl">Escanear red</span></button>
     <button class="btn wide-only" id="btnTrace" title="Trazar la ruta a una IP"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><span class="lbl">Tracert</span></button>
     <span class="sep wide-only"></span>
@@ -326,6 +359,7 @@ tr.final td{background:var(--ok-soft)}
     <div class="menu-wrap">
       <button class="ibtn" id="btnMenu" title="Más opciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
       <div class="menu" id="menu">
+      <button data-act="avail" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg><div>Disponibilidad<small>Historial y % de cada IP</small></div></button>
       <button data-act="scan" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg><div>Escanear red<small>Descubrir IPs activas en un rango</small></div></button>
       <button data-act="trace" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h7a3 3 0 0 1 0 6H10a3 3 0 0 0 0 6h7"/></svg><div>Tracert<small>Trazar la ruta a una IP</small></div></button>
       <button data-act="sound" class="narrow-only"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><div>Sonido de alertas<small id="mSoundState">Activar / silenciar</small></div></button>
@@ -412,6 +446,18 @@ tr.final td{background:var(--ok-soft)}
     <button class="x" data-close>✕</button>
   </div>
   <div class="dlg-b" style="padding-bottom:20px">
+    <div class="tabs" id="dTabs" style="max-width:320px"><button type="button" data-t="live" class="on">En vivo</button><button type="button" data-t="hist">Historial</button></div>
+    <div id="dHist" style="display:none">
+      <div class="d-tools" style="margin-bottom:12px"><b style="font-size:13px;flex:1" id="hTitle">Disponibilidad e historial</b><div class="seg" id="hRange"><button data-r="24h" class="on">24 h</button><button data-r="7d">7 días</button><button data-r="30d">30 días</button></div></div>
+      <div class="h-kpis" id="hKpis"></div>
+      <div class="d-chart">
+        <div class="d-tools"><b style="font-size:13px;flex:1">Latencia media y máxima (ms) · caídas en rojo</b><span class="hint" id="hEmpty"></span></div>
+        <canvas id="hCanvas"></canvas>
+        <div class="tip" id="hTip"></div>
+      </div>
+      <div class="h-out"><b style="font-size:13px">Caídas en el periodo</b><div class="tbl-wrap" style="margin-top:8px;max-height:220px"><table><thead><tr><th>Inicio</th><th>Fin</th><th style="text-align:right">Duración</th></tr></thead><tbody id="hOut"></tbody></table></div></div>
+    </div>
+    <div id="dLive">
     <div class="d-stats" id="dStats"></div>
     <div class="d-chart">
       <div class="d-tools"><b style="font-size:13px;flex:1">Latencia (ms)</b><div class="seg" id="dRange"><button data-r="60">1 min</button><button data-r="300" class="on">5 min</button><button data-r="900">15 min</button></div></div>
@@ -419,6 +465,20 @@ tr.final td{background:var(--ok-soft)}
       <div class="tip" id="dTip"></div>
     </div>
     <div class="console" id="dConsole"></div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Disponibilidad (todas las IPs) -->
+<dialog id="dlgAvail">
+  <div class="dlg-h"><h3>Disponibilidad</h3><div class="seg" id="aRange"><button data-r="24h" class="on">24 h</button><button data-r="7d">7 días</button><button data-r="30d">30 días</button></div><button class="btn sm" id="aExport" title="Guardar el informe en CSV">Exportar CSV</button><button class="x" data-close>✕</button></div>
+  <div class="dlg-b" style="padding-bottom:20px">
+    <div class="a-sum" id="aSum"></div>
+    <div class="tbl-wrap" style="max-height:60vh"><table class="a-tbl"><thead><tr>
+      <th data-k="name">Equipo</th><th data-k="group">Grupo</th><th data-k="availability" style="width:30%">Disponibilidad</th>
+      <th data-k="outages" style="text-align:right">Caídas</th><th data-k="downtime" style="text-align:right">Tiempo caído</th><th data-k="avg" style="text-align:right">Latencia media</th>
+    </tr></thead><tbody id="aBody"></tbody></table></div>
+    <div class="hint" style="margin-top:10px;color:var(--dim);font-size:12px">Disponibilidad = minutos sin caída ÷ minutos vigilados. Los periodos en pausa o con el monitor cerrado no cuentan. Pulsa una fila para ver su historial.</div>
   </div>
 </dialog>
 
@@ -444,6 +504,7 @@ tr.final td{background:var(--ok-soft)}
         <div class="field"><label>Fallos seguidos = caída</label><input class="inp" type="number" id="sDown" min="1" max="50"></div>
       </div>
       <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" type="number" id="sHigh" min="1"><span class="hint">Por encima de este valor la tarjeta se pone en ámbar.</span></div>
+      <div class="field"><label>Guardar historial durante (días)</label><input class="inp" type="number" id="sHistDays" min="7" max="365"><span class="hint" id="sHistHint">Disponibilidad y latencias por minuto. Lo más antiguo se borra solo.</span></div>
       <div class="switch"><div>Sonido de alerta<small>Pitido al caer o recuperarse una IP</small></div><input type="checkbox" class="tg" id="sSound"></div>
       <div class="switch"><div>Notificaciones de Windows<small>Aviso aunque la ventana esté minimizada</small></div><input type="checkbox" class="tg" id="sNotify"></div>
       <div class="switch"><div>Seguir en la bandeja al cerrar<small>Al cerrar la ventana el monitor sigue vigilando junto al reloj y avisa de las caídas</small></div><input type="checkbox" class="tg" id="sTray"></div>
@@ -606,7 +667,7 @@ function drawChart(cv, samples, o){
   const X = t => pl + (t - t0) / win * (w - pl - pr), Y = v => pt + (1 - v/mx) * (h - pt - pb);
   if (axes){
     g.font = "11px Segoe UI, sans-serif"; g.textAlign = "right"; g.textBaseline = "middle";
-    for (let i=0;i<=4;i++){ const v = mx*i/4, y = Y(v); g.strokeStyle = alpha(C.muted,.15); g.lineWidth = 1; g.beginPath(); g.moveTo(pl,Math.round(y)+.5); g.lineTo(w-pr,Math.round(y)+.5); g.stroke(); g.fillStyle = C.dim; g.fillText(Math.round(v)+"", pl-8, y); }
+    const ns = mx % 4 === 0 ? 4 : 5; for (let i=0;i<=ns;i++){ const v = mx*i/ns, y = Y(v); g.strokeStyle = alpha(C.muted,.15); g.lineWidth = 1; g.beginPath(); g.moveTo(pl,Math.round(y)+.5); g.lineTo(w-pr,Math.round(y)+.5); g.stroke(); g.fillStyle = C.dim; g.fillText(Math.round(v)+"", pl-8, y); }
     g.textAlign = "center"; g.textBaseline = "top";
     const step = o.win <= 60 ? 10 : o.win <= 300 ? 60 : 180;
     for (let s=0; s<=o.win; s+=step){ const x = X(now - s*1000); g.fillStyle = C.dim; g.fillText(s===0 ? "ahora" : "-"+(s>=60? (s/60)+"m" : s+"s"), Math.min(Math.max(x, pl+14), w-pr-14), h-pb+6); }
@@ -1082,7 +1143,7 @@ $("#btnAdd").onclick = () => openTarget(null);
 $("#btnAdd2").onclick = () => openTarget(null);
 
 // ------------------------------------------------------------ detalle
-function openDetail(id){ S.detailId = id; const d = $("#dlgDetail"); if (!d.open) d.showModal(); renderDetail(); }
+function openDetail(id){ const changed = S.detailId !== id; S.detailId = id; const d = $("#dlgDetail"); if (!d.open) d.showModal(); if (changed || !d.open) H.data = null; setDetailTab("live"); renderDetail(); }
 $("#dlgDetail").addEventListener("close", () => { S.detailId = null; });
 $("#dRange").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.range = +b.dataset.r; $$("#dRange button").forEach(x => x.classList.toggle("on", x === b)); renderDetail(); });
 let dGeom = null;
@@ -1121,6 +1182,182 @@ $("#dPause").onclick = async () => { const t = S.byId[S.detailId]; if (t) await 
 $("#dTrace").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTrace(t.host, true); } };
 $("#dEdit").onclick = () => { const t = S.byId[S.detailId]; if (t){ $("#dlgDetail").close(); openTarget(t); } };
 $("#dReset").onclick = async () => { const t = S.byId[S.detailId]; if (t){ await post("/api/targets/reset", {id:t.id}); toast("", "Estadísticas reiniciadas", title(t)); } };
+
+// ------------------------------------------------------------ historial (pestaña del detalle)
+const H = { tab:"live", range:"24h", data:null, timer:null, geom:null };
+function fmtMin(m){
+  m = Math.round(m || 0); if (m <= 0) return "0 min";
+  const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  if (d) return d + " d " + h + " h"; if (h) return h + " h" + (mm ? " " + mm + " min" : ""); return mm + " min";
+}
+const fmtPct = p => p == null ? "—" : p.toLocaleString("es", {maximumFractionDigits: p >= 99.9 || p < 1 ? 3 : 2}) + " %";
+const avColor = p => p == null ? C.dim : p >= 99.5 ? C.ok : p >= 97 ? C.warn : C.bad;
+function fmtDT(ms, withDay){ const d = new Date(ms); return (withDay === false ? "" : pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " ") + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+const RANGE_TXT = {"24h":"últimas 24 horas", "7d":"últimos 7 días", "30d":"últimos 30 días"};
+
+function setDetailTab(t){
+  H.tab = t;
+  $$("#dTabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  $("#dLive").style.display = t === "live" ? "" : "none";
+  $("#dHist").style.display = t === "hist" ? "" : "none";
+  clearInterval(H.timer);
+  if (t === "hist"){ loadHist(); H.timer = setInterval(loadHist, 60000); }
+}
+$("#dTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setDetailTab(b.dataset.t); });
+$("#hRange").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  H.range = b.dataset.r; $$("#hRange button").forEach(x => x.classList.toggle("on", x === b)); H.data = null; loadHist();
+});
+$("#dlgDetail").addEventListener("close", () => clearInterval(H.timer));
+
+async function loadHist(){
+  const id = S.detailId; if (!id) return;
+  try { const r = await api("GET", "/api/history?id=" + encodeURIComponent(id) + "&range=" + H.range); if (S.detailId === id){ H.data = r; renderHist(); } }
+  catch(e){ toast("bad", "No se pudo leer el historial", e.message); }
+}
+
+function renderHist(){
+  const h = H.data; if (!h) return;
+  const s = h.summary, col = avColor(s.availability);
+  $("#hTitle").textContent = "Disponibilidad e historial · " + RANGE_TXT[h.range];
+  const k = [
+    ["Disponibilidad", fmtPct(s.availability), s.minutes ? fmtMin(s.minutes) + " vigiladas" : "sin datos", col],
+    ["Caídas", s.outages, s.ongoing ? "una en curso" : (s.outages ? "en el periodo" : "ninguna"), s.outages ? C.bad : ""],
+    ["Tiempo caído", fmtMin(s.downtime), s.minutes ? fmtPct(s.minutes ? 100 * s.downtime / s.minutes : 0) + " del tiempo" : "", s.downtime ? C.bad : ""],
+    ["Caída más larga", s.longest ? fmtMin(s.longest) : "—", "", ""],
+    ["Latencia media", s.avg >= 0 ? fmtMs(s.avg) + " ms" : "—", s.max >= 0 ? "máx " + fmtMs(s.max) + " ms · pérdida " + s.loss.toLocaleString("es") + " %" : "", ""],
+  ];
+  $("#hKpis").innerHTML = k.map(([l, v, sm, c]) => `<div class="h-kpi"><label>${l}</label><b style="${c ? "color:" + c : ""}">${esc(v)}</b><small>${esc(sm)}</small></div>`).join("");
+  $("#hEmpty").textContent = s.minutes ? "" : "Aún no hay datos en este periodo: el historial se guarda desde la versión 1.5.0.";
+  H.geom = drawHist($("#hCanvas"), h);
+  $("#hOut").innerHTML = h.outages.length ? h.outages.slice(0, 200).map(o => `<tr>
+      <td class="mono">${fmtDT(o.start)}</td>
+      <td class="mono">${o.end == null ? '<b style="color:var(--bad)">en curso</b>' : fmtDT(o.end)}</td>
+      <td class="t" style="width:auto">${fmtMin(o.minutes)}</td></tr>`).join("")
+    : `<tr><td colspan="3" style="text-align:center;color:var(--dim);padding:18px">${s.minutes ? "Sin caídas en este periodo" : "Sin datos"}</td></tr>`;
+}
+
+function drawHist(cv, h){
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, ht = cv.clientHeight;
+  if (!w || !ht) return null;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(ht*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(ht*dpr); }
+  const g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,ht);
+  const B = h.buckets, n = B.length, pl = 44, pr = 8, pt = 8, pb = 22, iw = w - pl - pr, ih = ht - pt - pb, bw = iw / n;
+  let maxAvg = 0; for (const b of B) if (b[3] > maxAvg) maxAvg = b[3];
+  const mx = niceMax(Math.max(10, maxAvg * 1.7));
+  const X = i => pl + i * bw, Y = v => pt + (1 - Math.min(v, mx) / mx) * ih;
+  g.font = "11px Segoe UI, sans-serif";
+  // rejilla
+  g.textAlign = "right"; g.textBaseline = "middle";
+  const ns = mx % 4 === 0 ? 4 : 5; for (let i = 0; i <= ns; i++){ const v = mx * i / ns, y = Y(v); g.strokeStyle = alpha(C.muted, .15); g.lineWidth = 1; g.beginPath(); g.moveTo(pl, Math.round(y)+.5); g.lineTo(w-pr, Math.round(y)+.5); g.stroke(); g.fillStyle = C.dim; g.fillText(Math.round(v) + "", pl - 8, y); }
+  // tramos sin datos y caídas
+  for (let i = 0; i < n; i++){
+    const b = B[i];
+    if (!b[1]){ g.fillStyle = alpha(C.muted, .05); g.fillRect(X(i), pt, Math.max(1, bw), ih); continue; }
+    if (b[2] > 0){ g.fillStyle = alpha(C.bad, .25 + .55 * b[2] / b[1]); g.fillRect(X(i), pt, Math.max(1.5, bw - (bw > 4 ? 1 : 0)), ih); }
+  }
+  // banda de máximos: área suave entre la media y el máximo, por tramos continuos con datos
+  g.fillStyle = alpha(C.accent, .16);
+  for (let i = 0; i < n; ){
+    if (B[i][3] < 0){ i++; continue; }
+    let j = i; while (j + 1 < n && B[j + 1][3] >= 0) j++;
+    g.beginPath();
+    for (let q = i; q <= j; q++) g.lineTo(X(q) + bw / 2, Y(Math.max(B[q][4], B[q][3])));
+    for (let q = j; q >= i; q--) g.lineTo(X(q) + bw / 2, Y(B[q][3]));
+    g.closePath(); g.fill();
+    i = j + 1;
+  }
+  // línea de media
+  g.strokeStyle = C.accent; g.lineWidth = 1.8; g.lineJoin = "round"; g.beginPath(); let on = false;
+  for (let i = 0; i < n; i++){ const b = B[i]; if (b[3] < 0){ on = false; continue; } const x = X(i) + bw / 2, y = Y(b[3]); on ? g.lineTo(x, y) : g.moveTo(x, y); on = true; }
+  g.stroke();
+  // eje de tiempo
+  g.textAlign = "center"; g.textBaseline = "top"; g.fillStyle = C.dim;
+  // etiquetas en límites naturales: 24 h → cada 3/4/6 h en punto; 7 d → cada medianoche; 30 d → cada N días
+  const DAYS = ["dom","lun","mar","mié","jue","vie","sáb"];
+  const room = Math.max(2, Math.floor(iw / 70));
+  const hStep = [3, 4, 6, 12].find(s => 24 / s <= room) || 12, dStep = [1, 2, 3, 5, 7, 10].find(s => 30 / s <= room) || 10;
+  let lastX = -1e9;
+  for (let i = 0; i < n; i++){
+    const d = new Date(B[i][0]), prev = i ? new Date(B[i - 1][0]) : null;
+    let txt = null;
+    if (h.range === "24h"){ if (d.getMinutes() === 0 && d.getHours() % hStep === 0) txt = pad(d.getHours()) + ":00"; }
+    else if (prev && d.getDate() !== prev.getDate()){
+      if (h.range === "7d") txt = DAYS[d.getDay()] + " " + d.getDate();
+      else if (Math.round((d - new Date(d.getFullYear(), 0, 1)) / 864e5) % dStep === 0) txt = pad(d.getDate()) + "/" + pad(d.getMonth() + 1);
+    }
+    if (!txt) continue;
+    const x = X(i);
+    if (x - lastX < 46 || x < pl + 14 || x > w - pr - 14) continue;
+    g.strokeStyle = alpha(C.muted, .12); g.beginPath(); g.moveTo(Math.round(x) + .5, pt); g.lineTo(Math.round(x) + .5, pt + ih); g.stroke();
+    g.fillText(txt, x, ht - pb + 6); lastX = x;
+  }
+  return {pl, bw, n};
+}
+$("#hCanvas").addEventListener("mousemove", e => {
+  const tip = $("#hTip"), G = H.geom, h = H.data; if (!G || !h){ tip.style.display = "none"; return; }
+  const r = e.target.getBoundingClientRect(), i = Math.floor((e.clientX - r.left - G.pl) / G.bw);
+  if (i < 0 || i >= G.n){ tip.style.display = "none"; return; }
+  const b = h.buckets[i], end = b[0] + h.bucket * 60000;
+  let txt = fmtDT(b[0]) + " – " + fmtDT(end, h.range !== "24h" ? true : false);
+  if (!b[1]) txt += " · <b>sin datos</b>";
+  else txt += " · disp. <b>" + fmtPct(100 * (b[1] - b[2]) / b[1]) + "</b>" + (b[3] >= 0 ? " · media <b>" + fmtMs(b[3]) + " ms</b> · máx " + fmtMs(b[4]) + " ms" : "") + (b[2] ? " · <b style='color:var(--bad)'>" + fmtMin(b[2]) + " caída</b>" : "");
+  tip.style.display = "block"; tip.innerHTML = txt;
+  tip.style.left = Math.max(0, Math.min(G.pl + i * G.bw, r.width - tip.offsetWidth)) + "px"; tip.style.top = "36px";
+});
+$("#hCanvas").addEventListener("mouseleave", () => $("#hTip").style.display = "none");
+
+// ------------------------------------------------------------ disponibilidad (todas las IPs)
+const AV = { range:"24h", items:[], sort:"availability", asc:true };
+async function openAvail(){
+  const d = $("#dlgAvail"); if (!d.open) d.showModal();
+  await loadAvail();
+}
+async function loadAvail(){
+  $("#aBody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">Calculando…</td></tr>`;
+  try { const r = await api("GET", "/api/availability?range=" + AV.range); AV.items = r.items; renderAvail(); }
+  catch(e){ toast("bad", "No se pudo calcular la disponibilidad", e.message); }
+}
+function renderAvail(){
+  const it = AV.items.slice(), k = AV.sort, dir = AV.asc ? 1 : -1;
+  const val = x => k === "name" ? (x.name || x.host).toLowerCase() : k === "group" ? (x.group || "").toLowerCase() : k === "availability" ? (x.availability == null ? 999 : x.availability) : x[k];
+  it.sort((a, b) => { const va = val(a), vb = val(b); return (va < vb ? -1 : va > vb ? 1 : 0) * dir; });
+  $$(".a-tbl th[data-k]").forEach(th => { th.classList.toggle("sorted", th.dataset.k === k); th.classList.toggle("asc", th.dataset.k === k && AV.asc); });
+  const withData = it.filter(x => x.minutes > 0), totalMin = withData.reduce((s, x) => s + x.minutes, 0), totalDown = withData.reduce((s, x) => s + x.downMinutes, 0);
+  $("#aSum").innerHTML = `<span>Periodo: <b>${RANGE_TXT[AV.range]}</b></span><span>IPs con datos: <b>${withData.length}</b> de ${it.length}</span>`
+    + `<span>Disponibilidad global: <b style="color:${avColor(totalMin ? 100 * (totalMin - totalDown) / totalMin : null)}">${fmtPct(totalMin ? 100 * (totalMin - totalDown) / totalMin : null)}</b></span>`
+    + `<span>Caídas: <b>${it.reduce((s, x) => s + x.outages, 0)}</b></span>`;
+  $("#aBody").innerHTML = it.length ? it.map(x => {
+    const c = avColor(x.availability), p = x.availability == null ? 0 : Math.max(2, x.availability);
+    return `<tr data-id="${esc(x.id)}">
+      <td class="a-nm"><b>${esc(x.name || x.host)}</b>${x.name ? `<small>${esc(x.host)}</small>` : ""}</td>
+      <td style="color:var(--muted)">${esc(x.group || "—")}</td>
+      <td><div class="a-bar"><div class="tr"><i style="width:${p}%;background:${c}"></i></div><b style="color:${c}">${fmtPct(x.availability)}</b></div></td>
+      <td class="t" style="width:auto">${x.outages}${x.ongoing ? ' <span class="tag mon" style="background:var(--bad-soft);color:var(--bad)">en curso</span>' : ""}</td>
+      <td class="t" style="width:auto">${x.downtime ? fmtMin(x.downtime) : "—"}</td>
+      <td class="t" style="width:auto">${x.avg >= 0 ? fmtMs(x.avg) + " ms" : "—"}</td></tr>`;
+  }).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:24px">No hay IPs en el monitor</td></tr>`;
+}
+$(".a-tbl thead").addEventListener("click", e => {
+  const th = e.target.closest("th[data-k]"); if (!th) return;
+  if (AV.sort === th.dataset.k) AV.asc = !AV.asc; else { AV.sort = th.dataset.k; AV.asc = th.dataset.k === "name" || th.dataset.k === "group" || th.dataset.k === "availability"; }
+  renderAvail();
+});
+$("#aRange").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  AV.range = b.dataset.r; $$("#aRange button").forEach(x => x.classList.toggle("on", x === b)); loadAvail();
+});
+$("#aBody").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-id]"); if (!tr || !S.byId[tr.dataset.id]) return;
+  $("#dlgAvail").close();
+  H.range = AV.range; $$("#hRange button").forEach(x => x.classList.toggle("on", x.dataset.r === H.range));
+  openDetail(tr.dataset.id); setDetailTab("hist");
+});
+$("#aExport").onclick = async () => {
+  try { const r = await post("/api/export", {kind:"availability", range:AV.range}); toast("ok", "Informe exportado", r.path, 8000); }
+  catch(e){ toast("bad", "No se pudo exportar", e.message); }
+};
+$("#btnAvail").onclick = openAvail;
 
 // ------------------------------------------------------------ tracert
 let trJob = null, trTimer = null;
@@ -1177,6 +1414,7 @@ $("#trCopy").onclick = async () => {
 function openSettings(){
   const s = S.settings;
   $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
+  $("#sHistDays").value = s.historyDays; $("#sHistHint").textContent = "Disponibilidad y latencias por minuto (ocupa " + (s.historySize / 1048576).toLocaleString("es", {maximumFractionDigits:1}) + " MB). Lo más antiguo se borra solo.";
   $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
   $("#dlgSettings").showModal();
 }
@@ -1184,7 +1422,7 @@ $("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notific
 $("#sTest").onclick = () => { const was = S.settings.sound; S.settings.sound = true; beep("down"); S.settings.sound = was; toast("bad", "Ejemplo: Router sede sin respuesta", "10.0.0.1 · Tiempo de espera agotado"); };
 $("#fSettings").addEventListener("submit", async ev => {
   ev.preventDefault();
-  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked});
+  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, historyDays:+$("#sHistDays").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked});
   applySettingsUI(); $("#dlgSettings").close(); toast("ok", "Ajustes guardados"); render();
 });
 
@@ -1201,6 +1439,7 @@ menu.addEventListener("click", async e => {
     if (a === "pause-all") await post("/api/targets/pauseall", {paused:true});
     if (a === "resume-all") await post("/api/targets/pauseall", {paused:false});
     // entradas que sólo aparecen en ventanas estrechas (reutilizan los botones de la cabecera)
+    if (a === "avail") openAvail();
     if (a === "scan") openScan();
     if (a === "trace") openTrace(null, false);
     if (a === "sound") $("#btnSound").click();

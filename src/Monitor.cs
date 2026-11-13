@@ -259,6 +259,12 @@ namespace MonitorIPs
             if (rt != null) rt.Reset();
         }
 
+        public bool IsDown(string id)
+        {
+            var rt = Find(id);
+            return rt != null && !rt.Cfg.Paused && rt.State == "down";
+        }
+
         public bool HasHost(string host)
         {
             host = (host ?? "").Trim();
@@ -315,6 +321,7 @@ namespace MonitorIPs
         {
             long now = Util.NowMs();
             MonitorEvent pending = null;
+            bool isDown;
             lock (rt.Lock)
             {
                 long s = Interlocked.Increment(ref seq);
@@ -346,7 +353,9 @@ namespace MonitorIPs
                         pending = MakeEvent(rt.Cfg, "down", err, 0);
                     }
                 }
+                isDown = rt.State == "down";
             }
+            History.Add(rt.Cfg.Id, ms, isDown);
             if (pending != null) PushEvent(pending);
         }
 
