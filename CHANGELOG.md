@@ -2,6 +2,26 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.6.0] - 2026-11-13
+
+### Añadido
+- **Comprobación de servicios**, además del ping:
+  - **Puerto TCP**: comprueba que un servicio acepta conexiones (escritorio remoto, base de datos, impresora…). Distingue *puerto cerrado* (el equipo responde pero el servicio no) de *sin respuesta*.
+  - **Web (HTTP/HTTPS)**: comprueba el código de respuesta (por defecto 200-399, configurable: `200,301`, `2xx`…) y, opcionalmente, que la página contenga un texto. Admite certificados propios de equipos internos.
+- **Detectar puertos abiertos**: prueba en paralelo los 20 puertos más comunes de un equipo y permite añadir uno o varios con un clic.
+- Botón **"+ Servicio"** en el detalle de una IP para vigilar un puerto o una web del mismo equipo.
+- **Certificados HTTPS**: el detalle muestra el titular y la fecha de caducidad; a 14 días o menos avisa en la tarjeta, en el panel de eventos, en el log y en la bandeja.
+- "Varias a la vez" acepta `IP:puerto nombre` y `https://… nombre`.
+- Tiempo de espera propio por comprobación (vacío = automático: ping el general, TCP 3 s, web 10 s).
+
+### Cambiado
+- Las tarjetas muestran el tipo (icono), el puerto o la URL y la **causa breve** del fallo: PUERTO CERRADO, SIN RESPUESTA, HTTP 503, TEXTO NO ENCONTRADO, DNS…
+- El mismo equipo puede tener ping y varios servicios; los duplicados se detectan por comprobación.
+- Exportes CSV con columna "Comprobación"; eventos y log indican el puerto o la URL.
+
+### Corregido
+- Desde la 1.4.0, las notificaciones de la bandeja y el aviso "sigue vigilando" mostraban caracteres raros en las tildes (`caÃ­da`, `âš `) por un error de codificación al publicar.
+
 ## [1.5.0] - 2026-11-13
 
 ### Añadido
@@ -89,6 +109,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.6.0]: ../../releases/tag/v1.6.0
 [1.5.0]: ../../releases/tag/v1.5.0
 [1.4.1]: ../../releases/tag/v1.4.1
 [1.4.0]: ../../releases/tag/v1.4.0

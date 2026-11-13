@@ -1,10 +1,10 @@
 # Monitor de IPs
 
-Monitor para Windows que vigila varias IPs a la vez por **ping continuo**, traza rutas con **tracert** y **descubre equipos activos** en un rango de red, todo desde una interfaz moderna.
+Monitor para Windows que vigila varias IPs y servicios a la vez (**ping**, **puertos TCP** y **webs HTTP/HTTPS**), traza rutas con **tracert** y **descubre equipos activos** en un rango de red, todo desde una interfaz moderna.
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.5.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.6.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -13,6 +13,7 @@ Disponible como **instalador** o como **portable** (un único `.exe` de unos 175
 | | |
 |---|---|
 | **Ping continuo** | Una tarjeta por IP con latencia actual, gráfica de los últimos 2 min, mín/prom/máx y % de pérdida. Verde = en línea, ámbar = latencia alta o pérdidas, rojo = caída. |
+| **Servicios (TCP y web)** | Además del ping: comprueba un **puerto TCP** (escritorio remoto, SQL, impresora…) o una **web** (código HTTP y texto esperado, certificado HTTPS con aviso de caducidad). "Detectar puertos abiertos" encuentra los servicios de un equipo con un clic. La tarjeta muestra la causa del fallo: puerto cerrado, sin respuesta, HTTP 503… |
 | **Detalle** | Gráfica de 1, 5 o 15 min, jitter, enviados/recibidos, último error y consola con el formato de `ping -t`. |
 | **Alertas** | Tras N fallos seguidos (por defecto 3) la IP pasa a *caída*: aviso en pantalla, pitido, contador en el título y notificación de Windows, también con la ventana cerrada. Al recuperarse avisa con la duración de la caída. |
 | **Bandeja e inicio con Windows** | Sigue vigilando en la bandeja al cerrar la ventana y puede arrancar solo al encender el equipo. |
@@ -113,6 +114,7 @@ MonitorIPs.exe (C#, .NET Framework 4)
 | `src/Program.cs` | Arranque, instancia única, servidor HTTP, rutas de la API, ventana y ciclo de vida. |
 | `src/Tray.cs` | Icono de bandeja, menú, notificaciones con la ventana cerrada, enfoque de la ventana e inicio con Windows. |
 | `src/History.cs` | Historial por minuto en disco, cálculo de disponibilidad, caídas y tramos para las gráficas. |
+| `src/Checks.cs` | Comprobaciones: ping, puerto TCP y web (HTTP/HTTPS, certificados), y detección de puertos abiertos. |
 | `src/Monitor.cs` | Motor de ping, buffer circular de muestras, estadísticas, detección de caídas, eventos y papelera. |
 | `src/Tracer.cs` | Tracert mediante ping con TTL creciente. |
 | `src/Scanner.cs` | Escáner de rangos IPv4 en paralelo (ping + ARP) y subredes locales. |
