@@ -2,6 +2,17 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-11-13
+
+### Añadido
+- **Instalador** (`MonitorIPs-<versión>-Setup.exe`): asistente en español, sin permisos de administrador (opción de instalar para todos los usuarios), accesos en el menú Inicio y el escritorio, desinstalador y actualización encima de versiones anteriores. Pide cerrar el monitor si está abierto.
+- Descargas **portables** en cada versión: `.exe` suelto y `.zip` con instrucciones, más `SHA256SUMS.txt`.
+- Script `release.ps1` que genera todos los archivos de una versión y la publica en GitHub Releases.
+- Ajustes muestra si la copia es instalada o portable.
+
+### Cambiado
+- La versión instalada guarda sus datos (`config.json`, logs y exportes) en `AppData\Roaming\MonitorIPs`, así se conservan al actualizar o desinstalar. La portable sigue guardándolos junto al `.exe`.
+
 ## [1.2.0] - 2026-11-12
 
 ### Añadido
@@ -34,4 +45,5 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.3.0]: ../../releases/tag/v1.3.0
 [1.2.0]: ../../releases/tag/v1.2.0
