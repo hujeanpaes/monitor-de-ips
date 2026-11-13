@@ -167,6 +167,8 @@ namespace MonitorIPs
         public string ListSort { get; set; }
         /// <summary>Se cerró en modo pantalla (NOC): al reabrir vuelve a ese modo.</summary>
         public bool ScreenMode { get; set; }
+        /// <summary>Último título usado en el informe PDF.</summary>
+        public string ReportTitle { get; set; }
 
         public AppConfig()
         {
@@ -185,6 +187,7 @@ namespace MonitorIPs
             SkippedVersion = "";
             View = "cards";
             ListSort = "";
+            ReportTitle = "";
         }
 
         public void Normalize()

@@ -13,14 +13,14 @@ using System.Web.Script.Serialization;
 
 [assembly: AssemblyTitle("Monitor de IPs")]
 [assembly: AssemblyProduct("Monitor de IPs")]
-[assembly: AssemblyVersion("1.8.0.0")]
-[assembly: AssemblyFileVersion("1.8.0.0")]
+[assembly: AssemblyVersion("1.9.0.0")]
+[assembly: AssemblyFileVersion("1.9.0.0")]
 
 namespace MonitorIPs
 {
     static class Program
     {
-        const string Version = "1.8.0";
+        const string Version = "1.9.0";
         static string token;
         static int port;
         static HttpListener listener;
@@ -400,6 +400,8 @@ namespace MonitorIPs
                     return Ok();
                 case "/api/export":
                     return new Dictionary<string, object> { { "path", Export(Str(b, "kind"), Str(b, "range")) } };
+                case "/api/report":
+                    return MakeReport(b);
                 case "/api/update":
                     return Updater.Status();
                 case "/api/update/check":
@@ -455,6 +457,7 @@ namespace MonitorIPs
                 { "closeToTray", config.CloseToTray }, { "autostart", Autostart.IsEnabled() }, { "trayAlerts", trayAlerts },
                 { "historyDays", config.HistoryDays }, { "historySize", History.SizeBytes() }, { "updateCheck", config.UpdateCheck },
                 { "view", config.View }, { "listSort", config.ListSort }, { "screenMode", config.ScreenMode },
+                { "reportTitle", config.ReportTitle },
             };
         }
 
@@ -557,6 +560,89 @@ namespace MonitorIPs
             }
             catch { return false; }
         }
+
+        /// <summary>Informe PDF: resuelve el periodo en hora local, filtra por grupo y genera el archivo en exports\.</summary>
+        static Dictionary<string, object> MakeReport(Dictionary<string, object> b)
+        {
+            var es = System.Globalization.CultureInfo.GetCultureInfo("es-ES");
+            string period = Str(b, "period");
+            string title = (Str(b, "title") ?? "").Trim();
+            if (title.Length > 120) title = title.Substring(0, 120);
+            if (title != config.ReportTitle) { config.ReportTitle = title; Store.Save(config); }
+
+            DateTime today = DateTime.Today;
+            long now = Util.NowMs() / 60000, from, to;
+            bool daily = true;
+            string label, tag;
+            Func<long, string> day = m => Util.FromUnixMs(m * 60000).ToString("d MMM yyyy", es);
+            Func<long, string> dayTime = m => Util.FromUnixMs(m * 60000).ToString("d MMM yyyy, HH:mm", es);
+            switch (period)
+            {
+                case "24h":
+                    to = now; from = to - 1440; daily = false; tag = "24h";
+                    label = "Últimas 24 horas (" + dayTime(from) + " – " + dayTime(to) + ")";
+                    break;
+                case "7d":
+                case "30d":
+                {
+                    // mismo cálculo que la vista Disponibilidad, para que las cifras coincidan
+                    int span = period == "7d" ? 7 * 1440 : 30 * 1440, bucket = period == "7d" ? 60 : 240;
+                    to = now; from = (to - span) / bucket * bucket; tag = period;
+                    label = (period == "7d" ? "Últimos 7 días" : "Últimos 30 días") + " (" + dayTime(from) + " – " + dayTime(to) + ")";
+                    break;
+                }
+                case "thisMonth":
+                {
+                    var first = new DateTime(today.Year, today.Month, 1);
+                    from = History.DayStartMinute(first); to = now; tag = first.ToString("yyyy-MM");
+                    label = Cap(first.ToString("MMMM 'de' yyyy", es)) + " (del 1 al " + today.Day + ", hasta ahora)";
+                    break;
+                }
+                case "custom":
+                {
+                    DateTime a, z;
+                    if (!DateTime.TryParseExact(Str(b, "from"), "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out a) ||
+                        !DateTime.TryParseExact(Str(b, "to"), "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out z))
+                        throw new Exception("Indica las fechas «desde» y «hasta».");
+                    if (z < a) throw new Exception("La fecha «desde» debe ser anterior o igual a «hasta».");
+                    if (a > today) throw new Exception("La fecha «desde» no puede ser futura.");
+                    var limit = today.AddDays(-config.HistoryDays);
+                    if (a < limit) throw new Exception("Solo se guarda historial de los últimos " + config.HistoryDays + " días (desde el " + limit.ToString("d MMM yyyy", es) + "). Puedes ampliarlo en Ajustes.");
+                    from = History.DayStartMinute(a); to = Math.Min(now, History.DayStartMinute(z.AddDays(1)));
+                    tag = a.ToString("yyyy-MM-dd") + "_a_" + z.ToString("yyyy-MM-dd");
+                    label = a == z ? Cap(a.ToString("dddd d 'de' MMMM 'de' yyyy", es)) : "Del " + a.ToString("d MMM yyyy", es) + " al " + z.ToString("d MMM yyyy", es);
+                    if ((to - from) <= 2 * 1440) daily = false;
+                    break;
+                }
+                default: // mes anterior
+                {
+                    var first = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
+                    from = History.DayStartMinute(first); to = History.DayStartMinute(first.AddMonths(1)); tag = first.ToString("yyyy-MM");
+                    label = Cap(first.ToString("MMMM 'de' yyyy", es)) + " (del 1 al " + DateTime.DaysInMonth(first.Year, first.Month) + ")";
+                    break;
+                }
+            }
+            if (to <= from) throw new Exception("El periodo elegido está vacío.");
+
+            string group = b.ContainsKey("group") && b["group"] != null ? Str(b, "group") : null;   // null = todas
+            var targets = engine.SummaryAll().Where(t => group == null || (string)t["group"] == group).ToList();
+            if (targets.Count == 0) throw new Exception("No hay comprobaciones en ese alcance.");
+
+            var res = Report.Generate(new Report.Options
+            {
+                Title = title != "" ? title : "Informe de disponibilidad",
+                PeriodLabel = label,
+                Scope = group == null ? "Todas las comprobaciones" : (group == "" ? "Sin grupo" : "Grupo «" + group + "»"),
+                Version = Version, OutDir = Store.ExportsDir,
+                Browser = Environment.GetEnvironmentVariable("MONITORIPS_NOPDF") == "1" ? null : FindBrowser(),   // la variable permite probar el plan B (HTML)
+                FileBase = "informe_" + tag + "_" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss"),
+                FromMin = from, ToMin = to, Daily = daily, Targets = targets, DownNow = engine.IsDown,
+            });
+            if (!b.ContainsKey("open") || Bool(b, "open")) try { Process.Start(res.Path); } catch { }
+            return new Dictionary<string, object> { { "path", res.Path }, { "pdf", res.Pdf } };
+        }
+
+        static string Cap(string s) { return string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s.Substring(1); }
 
         static string Range(string r) { return r == "7d" || r == "30d" ? r : "24h"; }
         static string RangeLabel(string r) { return r == "30d" ? "Ultimos 30 dias" : r == "7d" ? "Ultimos 7 dias" : "Ultimas 24 horas"; }

@@ -289,6 +289,9 @@ details.adv[open] summary{margin-bottom:10px}
 .seg{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:2px}
 .seg button{border:0;background:none;padding:4px 10px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:12.5px;font-weight:600}
 .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.seg.rp-per{flex-wrap:wrap;gap:2px}
+.seg.rp-per button{flex:1 1 auto;padding:6px 10px}
+select.inp{cursor:pointer}
 .console{margin-top:14px;background:#0c0c0c;color:#cccccc;border-radius:12px;border:1px solid var(--border);font:12.5px/1.5 var(--mono);height:190px;overflow:auto;padding:10px 14px;white-space:pre}
 .console .to{color:#ff7b86}
 .console .hi{color:#f5c26b}
@@ -494,6 +497,7 @@ main{container-type:inline-size}
       <hr class="narrow-only">
         <button data-act="noc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div>Modo pantalla<small>Vista para monitor de pared (tecla M)</small></div></button>
         <hr>
+        <button data-act="report"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 17v-3M12 17v-6M15 17v-2"/></svg><div>Informe PDF…<small>Disponibilidad del mes o de un periodo</small></div></button>
         <button data-act="exp-events"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><div>Exportar eventos<small>Caídas y recuperaciones (CSV)</small></div></button>
         <button data-act="exp-summary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><div>Exportar resumen<small>Estadísticas por IP (CSV)</small></div></button>
         <button data-act="exp-samples"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><div>Exportar latencias<small>Cada respuesta, últimos 15 min (CSV)</small></div></button>
@@ -664,7 +668,7 @@ main{container-type:inline-size}
 
 <!-- Disponibilidad (todas las IPs) -->
 <dialog id="dlgAvail">
-  <div class="dlg-h"><h3>Disponibilidad</h3><div class="seg" id="aRange"><button data-r="24h" class="on">24 h</button><button data-r="7d">7 días</button><button data-r="30d">30 días</button></div><button class="btn sm" id="aExport" title="Guardar el informe en CSV">Exportar CSV</button><button class="x" data-close>✕</button></div>
+  <div class="dlg-h"><h3>Disponibilidad</h3><div class="seg" id="aRange"><button data-r="24h" class="on">24 h</button><button data-r="7d">7 días</button><button data-r="30d">30 días</button></div><button class="btn sm" id="aExport" title="Guardar el informe en CSV">Exportar CSV</button><button class="btn sm" id="aReport" title="Informe de disponibilidad en PDF (mes anterior, este mes, personalizado…)">Informe PDF</button><button class="x" data-close>✕</button></div>
   <div class="dlg-b" style="padding-bottom:20px">
     <div class="a-sum" id="aSum"></div>
     <div class="tbl-wrap" style="max-height:60vh"><table class="a-tbl"><thead><tr>
@@ -750,6 +754,30 @@ main{container-type:inline-size}
     <div class="dlg-b"><div class="hint" id="uSub" style="color:var(--muted);margin-bottom:10px"></div><div class="notes" id="uNotes"></div></div>
     <div class="dlg-f"><button class="btn" id="uPage">Ver en GitHub</button><span class="spacer"></span><button class="btn" data-close>Cerrar</button><button class="btn primary" id="uGet">Descargar</button></div>
   </div>
+</dialog>
+
+<!-- Informe PDF -->
+<dialog id="dlgReport">
+  <form method="dialog" id="fReport" style="width:520px;max-width:100%">
+    <div class="dlg-h"><h3>Informe de disponibilidad</h3><button type="button" class="x" data-close>✕</button></div>
+    <div class="dlg-b">
+      <div class="field"><label>Periodo</label>
+        <div class="seg rp-per" id="rPeriod">
+          <button type="button" data-p="prevMonth" class="on">Mes anterior</button><button type="button" data-p="thisMonth">Este mes</button>
+          <button type="button" data-p="30d">30 días</button><button type="button" data-p="7d">7 días</button><button type="button" data-p="24h">24 h</button><button type="button" data-p="custom">Personalizado</button>
+        </div>
+        <span class="hint" id="rPerHint"></span>
+      </div>
+      <div class="row2" id="rCustom" style="display:none">
+        <div class="field"><label>Desde</label><input class="inp" type="date" id="rFrom"></div>
+        <div class="field"><label>Hasta (incluido)</label><input class="inp" type="date" id="rTo"></div>
+      </div>
+      <div class="field"><label>Comprobaciones</label><select class="inp" id="rGroup"></select></div>
+      <div class="field"><label>Título (opcional)</label><input class="inp" id="rTitle" maxlength="120" placeholder="Informe de disponibilidad" autocomplete="off"></div>
+      <span class="hint">Incluye resumen, gráfica, detalle por comprobación y registro de caídas. Se guarda en la carpeta de exportes y se abre al terminar.</span>
+    </div>
+    <div class="dlg-f"><span class="spacer"></span><button type="button" class="btn" data-close>Cancelar</button><button type="submit" class="btn primary" id="rGo">Generar PDF</button></div>
+  </form>
 </dialog>
 
 <!-- Papelera -->
@@ -1926,6 +1954,49 @@ $("#aExport").onclick = async () => {
 };
 $("#btnAvail").onclick = openAvail;
 
+// ------------------------------------------------------------ informe PDF
+const RP = { period:"prevMonth", busy:false };
+const isoDay = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const monthName = d => d.toLocaleDateString("es", {month:"long", year:"numeric"});
+function reportHint(){
+  const t = new Date(), first = new Date(t.getFullYear(), t.getMonth(), 1), prev = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+  const txt = {prevMonth: "Todo " + monthName(prev) + ".", thisMonth: "Del 1 de " + monthName(first) + " hasta ahora.",
+               "30d": "Las últimas 30 × 24 horas.", "7d": "Las últimas 7 × 24 horas.", "24h": "Las últimas 24 horas, con detalle por hora.",
+               custom: "Hasta " + S.settings.historyDays + " días atrás (historial guardado; se amplía en Ajustes)."}[RP.period];
+  $("#rPerHint").textContent = txt;
+  $("#rCustom").style.display = RP.period === "custom" ? "" : "none";
+}
+function openReport(){
+  const groups = [...new Set(S.targets.map(t => t.group || ""))].sort((a, b) => (a === "") - (b === "") || a.localeCompare(b, "es"));
+  $("#rGroup").innerHTML = `<option value="*">Todas (${S.targets.length})</option>` + groups.map(g =>
+    `<option value="${esc(g)}">${esc(g || "Sin grupo")} (${S.targets.filter(t => (t.group || "") === g).length})</option>`).join("");
+  const t = new Date(), min = new Date(t); min.setDate(t.getDate() - S.settings.historyDays);
+  for (const el of [$("#rFrom"), $("#rTo")]){ el.min = isoDay(min); el.max = isoDay(t); }
+  if (!$("#rFrom").value){ const a = new Date(t); a.setDate(t.getDate() - 6); $("#rFrom").value = isoDay(a); $("#rTo").value = isoDay(t); }
+  $("#rTitle").value = S.settings.reportTitle || "";
+  $$("#rPeriod button").forEach(b => b.classList.toggle("on", b.dataset.p === RP.period));
+  reportHint();
+  $("#dlgReport").showModal();
+}
+$("#rPeriod").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; RP.period = b.dataset.p; $$("#rPeriod button").forEach(x => x.classList.toggle("on", x === b)); reportHint(); });
+$("#aReport").onclick = () => { RP.period = {"24h":"24h", "7d":"7d", "30d":"30d"}[AV.range] || "prevMonth"; openReport(); };
+$("#fReport").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (RP.busy) return;
+  const g = $("#rGroup").value, go = $("#rGo");
+  const body = {period:RP.period, title:$("#rTitle").value.trim(), group: g === "*" ? null : g};
+  if (RP.period === "custom"){ body.from = $("#rFrom").value; body.to = $("#rTo").value; }
+  RP.busy = true; go.disabled = true; go.textContent = "Generando…";
+  try {
+    const r = await post("/api/report", body);
+    $("#dlgReport").close();
+    const open = {label:"Abrir carpeta", fn:() => post("/api/open", {kind:"exports"}).catch(()=>{})};
+    if (r.pdf) toast("ok", "Informe PDF generado", r.path, 10000, open);
+    else toast("info", "Informe guardado como página web", "No se pudo crear el PDF con Edge: se abrió en el navegador; usa Ctrl+P → Guardar como PDF.", 14000, open);
+  } catch(err){ toast("bad", "No se pudo generar el informe", err.message, 10000); }
+  RP.busy = false; go.disabled = false; go.textContent = "Generar PDF";
+});
+
 // ------------------------------------------------------------ tracert
 let trJob = null, trTimer = null;
 function openTrace(host, autostart){
@@ -2015,6 +2086,7 @@ menu.addEventListener("click", async e => {
     if (a === "clear-all") confirmClearAll();
     if (a === "update") checkUpdates(true);
     if (a === "noc") setNoc(true);
+    if (a === "report") openReport();
     if (a === "settings") openSettings();
     if (a === "quit") { await post("/api/quit"); document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:var(--muted)">Monitor cerrado. Ya puedes cerrar esta ventana.</div>'; setTimeout(() => window.close(), 400); }
   } catch(err){ toast("bad", "Error", err.message); }

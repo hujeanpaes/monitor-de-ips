@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.9.0] - 2026-11-13
+
+### Añadido
+- **Informe PDF de disponibilidad**, desde el menú ⋮ o la ventana Disponibilidad.
+  - **Periodo:** mes anterior, este mes, 24 h, 7 días, 30 días o fechas personalizadas.
+  - **Alcance:** todas las comprobaciones o un grupo, con un título propio que se recuerda.
+  - **Contenido:**
+    - Resumen: disponibilidad global ponderada, caídas, tiempo caído, peor comprobación y latencia media.
+    - Gráfica de disponibilidad por día (o por hora en 24 h) con el objetivo del 99,9 %.
+    - Detalle por comprobación agrupado y ordenado de peor a mejor, con su cobertura de datos.
+    - Registro de caídas, incluidas las que siguen en curso.
+  - **Colores:** verde ≥ 99,9 %, ámbar ≥ 99 % y rojo < 99 %.
+  - Se crea con el Edge del propio equipo (sin instalar nada), se guarda en `exports\` y se abre al terminar.
+  - Si no se puede crear el PDF, se guarda como página web para imprimirla con Ctrl+P.
+
+### Cambiado
+- El historial admite periodos de calendario (por ejemplo, "octubre completo") además de las últimas 24 h, 7 días y 30 días.
+
 ## [1.8.0] - 2026-11-13
 
 ### Añadido
@@ -133,6 +151,7 @@ Versión previa al repositorio (no publicada).
 ### Añadido
 - Monitor portable con ping continuo multi-IP, gráficas, estadísticas, alertas de caída y recuperación, tracert, grupos, ajustes, tema claro/oscuro, logs diarios y exportación a CSV.
 
+[1.9.0]: ../../releases/tag/v1.9.0
 [1.8.0]: ../../releases/tag/v1.8.0
 [1.7.0]: ../../releases/tag/v1.7.0
 [1.6.0]: ../../releases/tag/v1.6.0
