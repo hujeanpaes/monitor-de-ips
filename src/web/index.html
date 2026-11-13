@@ -247,6 +247,19 @@ details.adv summary{cursor:pointer;font-size:12.5px;color:var(--muted);font-weig
 details.adv[open] summary{margin-bottom:10px}
 .kind-ic{display:inline-flex;vertical-align:-2px;margin-right:6px;color:var(--accent);opacity:.9}
 .c-cert{color:var(--warn);font-weight:600}
+/* aviso de versión nueva */
+.upd{flex:none;display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 18px;background:var(--accent-soft);border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent);font-size:13px}
+.upd.show{display:flex}
+.upd b{color:var(--accent)}
+.upd .spacer{flex:1}
+.upd .btn.sm{height:28px}
+.notes{max-height:55vh;overflow:auto;font-size:13.5px;line-height:1.55}
+.notes h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.notes ul{margin:0 0 8px;padding-left:20px}
+.notes li{margin:3px 0}
+.notes code{font-family:var(--mono);font-size:12.5px;background:var(--bg2);padding:1px 5px;border-radius:5px}
+.notes table{margin:8px 0;font-size:12.5px}
+.notes td,.notes th{padding:5px 8px}
 /* historial y disponibilidad */
 .h-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
 .h-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
@@ -392,6 +405,7 @@ tr.final td{background:var(--ok-soft)}
         <button data-act="trash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="M10 11v5M14 11v5"/></svg><div>Papelera <span class="chip" id="trashCount" style="display:none"></span><small>Recupera IPs eliminadas (30 días)</small></div></button>
         <button data-act="clear-all" class="danger-item"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/><path d="m10 11 4 4M14 11l-4 4"/></svg><div>Eliminar todas las IPs…<small>Se mueven a la papelera</small></div></button>
         <hr>
+        <button data-act="update"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><div>Buscar actualizaciones<small id="mUpdState">Comprueba si hay una versión nueva</small></div></button>
         <button data-act="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><div>Ajustes</div></button>
         <button data-act="quit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/></svg><div>Salir del monitor<small>Detiene el monitoreo y quita el icono de la bandeja</small></div></button>
       </div>
@@ -409,6 +423,15 @@ tr.final td{background:var(--ok-soft)}
   <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar IP, nombre, grupo o rango (192.168.3.1-50)…" title="Busca por texto o filtra por rango: 192.168.3.1-50 · 192.168.3.1 - 192.168.3.100 · 10.64.12.0/24  (Ctrl+F)" autocomplete="off"></label>
   <span class="clock" id="clock"></span>
 </nav>
+<div class="upd" id="updBar" role="status">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+  <span>Versión <b id="updVer"></b> disponible</span>
+  <span class="spacer"></span>
+  <button class="btn sm" id="updNotes">Novedades</button>
+  <button class="btn sm primary" id="updGet">Descargar</button>
+  <button class="btn sm ghost" id="updSkip" title="No volver a avisar de esta versión">Omitir esta versión</button>
+  <button class="ibtn" style="width:28px;height:28px" id="updClose" title="Ocultar por ahora">✕</button>
+</div>
 
 <div class="layout">
   <main id="main">
@@ -456,6 +479,13 @@ tr.final td{background:var(--ok-soft)}
           </details>
         </div>
         <div class="field"><label>Nombre (opcional)</label><input class="inp" id="tName" placeholder="Router sede central" autocomplete="off"></div>
+        <details class="adv" id="tAlerts"><summary>Alertas de esta comprobación</summary>
+          <div class="row2">
+            <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" id="tHigh" type="number" min="1" max="60000" autocomplete="off"></div>
+            <div class="field"><label>Fallos seguidos para darla por caída</label><input class="inp" id="tDown" type="number" min="1" max="50" autocomplete="off"></div>
+          </div>
+          <span class="hint">Vacío = usa el valor general de Ajustes.</span>
+        </details>
       </div>
       <div id="tMany" style="display:none">
         <div class="field"><label>Una por línea</label><textarea class="inp" id="tBulk" placeholder="10.64.12.1 Router sede&#10;Switch planta 2;172.17.16.205&#10;10.225.146.130"></textarea><span class="hint">Formato libre: "IP nombre", "nombre;IP" o sólo la IP. Puertos: "10.0.0.5:3389 Servidor". Webs: "https://intranet/ Intranet". También puedes pegar líneas de ping.</span></div>
@@ -541,12 +571,13 @@ tr.final td{background:var(--ok-soft)}
         <div class="field"><label>Tiempo de espera (ms)</label><input class="inp" type="number" id="sTimeout" min="200" max="10000" step="100"></div>
         <div class="field"><label>Fallos seguidos = caída</label><input class="inp" type="number" id="sDown" min="1" max="50"></div>
       </div>
-      <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" type="number" id="sHigh" min="1"><span class="hint">Por encima de este valor la tarjeta se pone en ámbar.</span></div>
+      <div class="field"><label>Latencia alta a partir de (ms)</label><input class="inp" type="number" id="sHigh" min="1"><span class="hint">Por encima de este valor la tarjeta se pone en ámbar. Cada IP puede tener sus propios umbrales (Editar → Alertas de esta comprobación).</span></div>
       <div class="field"><label>Guardar historial durante (días)</label><input class="inp" type="number" id="sHistDays" min="7" max="365"><span class="hint" id="sHistHint">Disponibilidad y latencias por minuto. Lo más antiguo se borra solo.</span></div>
       <div class="switch"><div>Sonido de alerta<small>Pitido al caer o recuperarse una IP</small></div><input type="checkbox" class="tg" id="sSound"></div>
       <div class="switch"><div>Notificaciones de Windows<small>Aviso aunque la ventana esté minimizada</small></div><input type="checkbox" class="tg" id="sNotify"></div>
       <div class="switch"><div>Seguir en la bandeja al cerrar<small>Al cerrar la ventana el monitor sigue vigilando junto al reloj y avisa de las caídas</small></div><input type="checkbox" class="tg" id="sTray"></div>
       <div class="switch"><div>Iniciar con Windows<small>Arranca en la bandeja al encender el equipo, sin abrir la ventana</small></div><input type="checkbox" class="tg" id="sAuto"></div>
+      <div class="switch"><div>Buscar actualizaciones automáticamente<small id="sUpdState">Consulta GitHub al arrancar y una vez al día</small></div><div style="display:flex;gap:8px;align-items:center"><button type="button" class="btn sm" id="sUpdNow">Buscar ahora</button><input type="checkbox" class="tg" id="sUpd"></div></div>
       <div class="switch"><div>Probar alerta<small>Escucha cómo suena una caída</small></div><button type="button" class="btn sm" id="sTest">Probar</button></div>
       <div class="field" style="margin-top:12px"><label>Carpeta de datos</label><div class="hint" id="sDir" style="font-family:var(--mono);word-break:break-all"></div></div>
     </div>
@@ -584,6 +615,15 @@ tr.final td{background:var(--ok-soft)}
     <div class="field" style="margin:0;flex:1"><label>Grupo para las nuevas</label><input class="inp" id="scGroup" list="groupList" placeholder="Sin grupo" autocomplete="off"></div>
     <div class="field" style="margin:0;width:120px"><label>Intervalo (s)</label><input class="inp" id="scInterval" type="number" min="0.25" step="0.25" value="1"></div>
     <button class="btn primary" id="scAdd" disabled style="align-self:flex-end">Añadir 0 IPs al monitor</button>
+  </div>
+</dialog>
+
+<!-- Novedades de la versión nueva -->
+<dialog id="dlgUpd">
+  <div style="width:640px;max-width:100%">
+    <div class="dlg-h"><h3 id="uTitle">Novedades</h3><button class="x" data-close>✕</button></div>
+    <div class="dlg-b"><div class="hint" id="uSub" style="color:var(--muted);margin-bottom:10px"></div><div class="notes" id="uNotes"></div></div>
+    <div class="dlg-f"><button class="btn" id="uPage">Ver en GitHub</button><span class="spacer"></span><button class="btn" data-close>Cerrar</button><button class="btn primary" id="uGet">Descargar</button></div>
   </div>
 </dialog>
 
@@ -670,7 +710,7 @@ function cls(t){
   if (t.state === "down") return "s-bad";
   if (t.state === "unknown" && t.sent === 0) return "s-wait";
   if (t.consec > 0) return "s-warn";
-  if (t.state === "up" && t.last >= S.settings.highLatencyMs) return "s-warn";
+  if (t.state === "up" && t.last >= t.highEff) return "s-warn";
   if (t.state === "up") return "s-ok";
   return "s-warn";
 }
@@ -851,6 +891,9 @@ async function poll(){
     failCount = 0; $("#offline").classList.remove("show");
     S.seq = r.seq;
     const tc = $("#trashCount"); tc.textContent = r.trashCount; tc.style.display = r.trashCount ? "" : "none";
+    const av = r.update && r.update.available;
+    if (av !== S.updAvail){ S.updAvail = av; $("#updVer").textContent = av || ""; }
+    $("#updBar").classList.toggle("show", !!av && S.updHidden !== av);
     const prevSettingsTheme = S.settings.theme;
     S.settings = r.settings;
     if (!S.loaded || prevSettingsTheme !== r.settings.theme) applyTheme(r.settings.theme);
@@ -1112,6 +1155,67 @@ $("#dlgScan").addEventListener("close", () => {
   if (scJob && scJob.status === "running"){ clearTimeout(scTimer); scTimer = setTimeout(pollScan, 1500); }
 });
 
+// ------------------------------------------------------------ versión nueva (GitHub Releases)
+/** Notas de la Release (Markdown sencillo) → HTML seguro. */
+function mdToHtml(md){
+  const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, "$1").replace(/\*(.+?)\*/g, "<i>$1</i>");
+  let html = "", list = false, table = [];
+  const flushTable = () => { if (!table.length) return; html += "<table>" + table.filter(r => !/^\s*\|?\s*-{3}/.test(r)).map((r, i) => "<tr>" + r.replace(/^\||\|$/g, "").split("|").map(c => (i ? "<td>" : "<th>") + inline(c.trim()) + (i ? "</td>" : "</th>")).join("") + "</tr>").join("") + "</table>"; table = []; };
+  for (const raw of String(md || "").replace(/\r/g, "").split("\n")){
+    const line = raw.trimEnd();
+    if (/^\s*\|/.test(line)){ if (list){ html += "</ul>"; list = false; } table.push(line.trim()); continue; }
+    flushTable();
+    if (/^\s*[-*] /.test(line)){ if (!list){ html += "<ul>"; list = true; } html += "<li>" + inline(line.replace(/^\s*[-*] /, "")) + "</li>"; continue; }
+    if (list){ html += "</ul>"; list = false; }
+    if (/^#{1,6} /.test(line)) html += "<h4>" + inline(line.replace(/^#+ /, "")) + "</h4>";
+    else if (/^-{3,}$/.test(line.trim())) html += "";
+    else if (line.trim()) html += "<p>" + inline(line) + "</p>";
+  }
+  flushTable(); if (list) html += "</ul>";
+  return html;
+}
+function fmtAgo(ms){ if (!ms) return "nunca"; const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? "hace un momento" : m < 60 ? "hace " + m + " min" : m < 1440 ? "hace " + Math.round(m / 60) + " h" : new Date(ms).toLocaleDateString("es"); }
+async function refreshUpdateState(){
+  try {
+    const u = await api("GET", "/api/update");
+    const txt = u.error ? "Última comprobación: " + fmtAgo(u.checkedAt) + " · " + u.error
+      : !u.latest ? "Aún no se ha comprobado"
+      : u.newer ? "Versión " + u.latest + " disponible (tienes la " + u.current + ")"
+      : "Estás al día (" + u.current + ") · comprobado " + fmtAgo(u.checkedAt);
+    $("#sUpdState").textContent = txt; $("#mUpdState").textContent = txt;
+    return u;
+  } catch(e){ return null; }
+}
+async function checkUpdates(manual){
+  if (manual) toast("", "Buscando actualizaciones…", null, 2500);
+  try {
+    const u = await post("/api/update/check");
+    await refreshUpdateState();
+    if (!manual) return u;
+    if (u.error && !u.latest) toast("bad", "No se pudo comprobar", u.error);
+    else if (u.newer) { S.updHidden = null; showUpdateNotes(); }
+    else toast("ok", "Estás al día", "Versión " + u.current);
+    return u;
+  } catch(e){ if (manual) toast("bad", "No se pudo comprobar", e.message); }
+}
+async function showUpdateNotes(){
+  const u = await refreshUpdateState(); if (!u || !u.latest) return;
+  $("#uTitle").textContent = "Novedades de la versión " + u.latest;
+  $("#uSub").textContent = (u.published ? "Publicada el " + new Date(u.published).toLocaleDateString("es") + " · " : "") + "Tienes la " + u.current + (S.settings.installed ? " (instalada): se descargará el instalador." : " (portable): se descargará el portable.");
+  $("#uNotes").innerHTML = mdToHtml(u.notes) || '<p style="color:var(--dim)">Sin notas.</p>';
+  $("#uGet").style.display = u.newer ? "" : "none";
+  $("#dlgUpd").showModal();
+}
+const openUpdate = async kind => { try { await post("/api/update/open", {kind}); toast("ok", kind === "download" ? "Descarga abierta en tu navegador" : "Página abierta en tu navegador", kind === "download" ? "Cuando termine, ejecuta el archivo descargado." : null, 7000); } catch(e){ toast("bad", "No se pudo abrir", e.message); } };
+$("#updNotes").onclick = showUpdateNotes;
+$("#updGet").onclick = () => openUpdate("download");
+$("#uGet").onclick = () => { $("#dlgUpd").close(); openUpdate("download"); };
+$("#uPage").onclick = () => openUpdate("page");
+$("#updSkip").onclick = async () => { const v = S.updAvail; await post("/api/update/skip", {version:v}); toast("", "No se volverá a avisar de la versión " + v, "Puedes buscarla a mano desde el menú ⋮."); };
+$("#updClose").onclick = () => { S.updHidden = S.updAvail; $("#updBar").classList.remove("show"); };
+$("#sUpdNow").onclick = () => checkUpdates(true);
+
 // ------------------------------------------------------------ papelera
 async function openTrash(){ const d = $("#dlgTrash"); if (!d.open) d.showModal(); await renderTrash(); }
 async function renderTrash(){
@@ -1161,7 +1265,7 @@ function subLine(t){
 }
 /** Línea de la consola del detalle según el tipo. s = [seq, t, ms, ttl|código] */
 function consoleLine(t, s){
-  const ts = "[" + hms(s[1]) + "] ", hi = s[2] >= S.settings.highLatencyMs ? "hi" : "";
+  const ts = "[" + hms(s[1]) + "] ", hi = s[2] >= t.highEff ? "hi" : "";
   if (t.check === "tcp")
     return s[2] >= 0 ? `<span class="${hi}">${ts}Conexión a ${esc(t.host)}:${t.port} correcta: ${s[2] === 0 ? "<1" : s[2]} ms</span>`
                      : `<span class="to">${ts}Sin conexión con ${esc(t.host)}:${t.port}</span>`;
@@ -1241,6 +1345,9 @@ function openTarget(t, preset){
   $("#tInsecure").checked = p.insecure !== false;
   $("#tAdv").open = !!(p.keyword || (p.expect && p.expect !== "200-399") || p.insecure === false);
   $("#tTimeout").value = p.timeoutMs ? p.timeoutMs / 1000 : "";
+  $("#tHigh").value = p.highLatencyMs || ""; $("#tDown").value = p.downAfter || "";
+  $("#tHigh").placeholder = "general: " + S.settings.highLatencyMs + " ms"; $("#tDown").placeholder = "general: " + S.settings.downAfter;
+  $("#tAlerts").open = !!(p.highLatencyMs || p.downAfter);
   $("#tBulk").value = ""; $("#tErr").textContent = "";
   setKind(p.check || "ping");
   if (t) $("#tInterval").value = t.interval / 1000;
@@ -1266,7 +1373,8 @@ $("#fTarget").addEventListener("submit", async ev => {
       const r = await post("/api/targets/bulk", {text, group, interval});
       toast("ok", r.added + " puertos añadidos", host + (r.added < tPicked.size ? " · " + (tPicked.size - r.added) + " ya estaban" : ""));
     } else {
-      const body = {id:editId, name, group, interval, check:tKind, timeoutMs};
+      const body = {id:editId, name, group, interval, check:tKind, timeoutMs,
+                    highLatencyMs: parseInt($("#tHigh").value, 10) || 0, downAfter: parseInt($("#tDown").value, 10) || 0};
       if (tKind === "http"){
         const url = $("#tUrl").value.trim();
         if (!url) return err("Indica la URL, por ejemplo https://intranet/.", "#tUrl");
@@ -1302,6 +1410,7 @@ function renderDetail(){
   $("#dTitle").textContent = title(t); $("#dHost").textContent = t.check === "http" ? t.url : t.check === "tcp" ? t.host + " · " + t.label : t.host;
   $("#dAddSvc").style.display = t.check === "ping" ? "" : "none";
   $("#dGroup").innerHTML = (t.group ? `<span class="chip">${esc(t.group)}</span>` : "")
+    + ((t.highLatencyMs || t.downAfter) ? ` <span class="chip" style="background:var(--warn-soft);color:var(--warn)" title="Umbrales propios de esta comprobación">Umbral propio: ${t.highEff} ms · ${t.downEff} fallos</span>` : "")
     + (t.consec > 0 && t.error ? ` <span style="color:var(--bad);font-family:var(--sans)">Último error: ${esc(t.error)}</span>` : "");
   $("#dPause").innerHTML = t.paused ? ICON.play + " Reanudar" : ICON.pause + " Pausar";
   const st = [["Estado", t.state === "up" ? "En línea" : t.state === "down" ? "Caída" : t.state === "paused" ? "Pausada" : "…", colorFor(c)],
@@ -1309,7 +1418,7 @@ function renderDetail(){
     ["Mín / Máx", fmtMs(t.min) + " / " + fmtMs(t.max)], ["Promedio", fmtMs(t.avg) + (t.avg >= 0 ? " ms" : "")], ["Jitter", t.avg >= 0 ? fmtMs(t.jitter) + " ms" : "—"],
     ["Pérdida", t.loss + "%", t.loss >= 10 ? C.bad : t.loss > 0 ? C.warn : ""], ["Enviados / Recib.", t.sent + " / " + t.recv]];
   $("#dStats").innerHTML = st.map(([l, v, col]) => `<div class="d-stat"><label>${l}</label><b style="${col ? "color:" + col : ""}">${esc(v)}</b></div>`).join("");
-  dGeom = drawChart($("#dCanvas"), S.buf[t.id] || [], {win:S.range, axes:true, color:colorFor(c) === C.dim ? C.accent : colorFor(c), high:S.settings.highLatencyMs, interval:t.interval/1000});
+  dGeom = drawChart($("#dCanvas"), S.buf[t.id] || [], {win:S.range, axes:true, color:colorFor(c) === C.dim ? C.accent : colorFor(c), high:t.highEff, interval:t.interval/1000});
   // consola estilo ping -t
   const con = $("#dConsole"), atBottom = con.scrollTop + con.clientHeight >= con.scrollHeight - 8;
   const last = (S.buf[t.id] || []).slice(-120);
@@ -1564,14 +1673,14 @@ function openSettings(){
   const s = S.settings;
   $("#sTimeout").value = s.timeoutMs; $("#sDown").value = s.downAfter; $("#sHigh").value = s.highLatencyMs;
   $("#sHistDays").value = s.historyDays; $("#sHistHint").textContent = "Disponibilidad y latencias por minuto (ocupa " + (s.historySize / 1048576).toLocaleString("es", {maximumFractionDigits:1}) + " MB). Lo más antiguo se borra solo.";
-  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
+  $("#sSound").checked = s.sound; $("#sNotify").checked = s.notify; $("#sTray").checked = s.closeToTray; $("#sAuto").checked = s.autostart; $("#sUpd").checked = s.updateCheck; refreshUpdateState(); $("#sDir").textContent = s.dataDir; $("#sVer").textContent = "v" + s.version + (s.installed ? " · instalada" : " · portable");
   $("#dlgSettings").showModal();
 }
 $("#sNotify").addEventListener("change", e => { if (e.target.checked && "Notification" in window && Notification.permission === "default") Notification.requestPermission(); });
 $("#sTest").onclick = () => { const was = S.settings.sound; S.settings.sound = true; beep("down"); S.settings.sound = was; toast("bad", "Ejemplo: Router sede sin respuesta", "10.0.0.1 · Tiempo de espera agotado"); };
 $("#fSettings").addEventListener("submit", async ev => {
   ev.preventDefault();
-  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, historyDays:+$("#sHistDays").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked});
+  S.settings = await post("/api/settings", {timeoutMs:+$("#sTimeout").value, downAfter:+$("#sDown").value, highLatencyMs:+$("#sHigh").value, historyDays:+$("#sHistDays").value, sound:$("#sSound").checked, notify:$("#sNotify").checked, closeToTray:$("#sTray").checked, autostart:$("#sAuto").checked, updateCheck:$("#sUpd").checked});
   applySettingsUI(); $("#dlgSettings").close(); toast("ok", "Ajustes guardados"); render();
 });
 
@@ -1595,6 +1704,7 @@ menu.addEventListener("click", async e => {
     if (a === "theme") $("#btnTheme").click();
     if (a === "trash") openTrash();
     if (a === "clear-all") confirmClearAll();
+    if (a === "update") checkUpdates(true);
     if (a === "settings") openSettings();
     if (a === "quit") { await post("/api/quit"); document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:var(--muted)">Monitor cerrado. Ya puedes cerrar esta ventana.</div>'; setTimeout(() => window.close(), 400); }
   } catch(err){ toast("bad", "Error", err.message); }
