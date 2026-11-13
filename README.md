@@ -4,7 +4,7 @@ Monitor para Windows que vigila varias IPs y servicios a la vez (**ping**, **pue
 
 Disponible como **instalador** o como **portable** (un único `.exe` de unos 175 KB, sin instalar nada). Usa .NET Framework 4 y Microsoft Edge, que ya vienen con Windows 10 y 11.
 
-**Versión actual:** 1.6.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
+**Versión actual:** 1.7.0 · [Descargar](../../releases/latest) · [Historial de cambios](CHANGELOG.md)
 
 ---
 
@@ -43,6 +43,8 @@ Cada versión se publica en **[Releases](../../releases/latest)** con estas opci
 | `SHA256SUMS.txt` | Huellas SHA-256 para verificar las descargas. |
 
 > La primera vez, Windows puede mostrar **"Windows protegió su PC"** porque los ejecutables no tienen firma digital: *Más información → Ejecutar de todas formas*.
+
+El monitor **avisa cuando hay una versión nueva** (franja bajo los filtros y notificación en la bandeja) y descarga el instalador o el portable según la copia que uses.
 
 ## Uso
 
@@ -129,5 +131,6 @@ MonitorIPs.exe (C#, .NET Framework 4)
 ## Seguridad y privacidad
 
 - El servidor escucha sólo en `localhost` en un puerto aleatorio, y cada llamada a la API exige un token generado en cada arranque.
-- No se envía nada a internet: sólo los pings, trazas y consultas DNS/ARP hacia las IPs que configures.
+- No se envía nada tuyo a internet: sólo los pings, conexiones y peticiones web hacia lo que configures.
+- El **aviso de versión nueva** consulta una vez al día la última Release pública de este repositorio en `api.github.com` (sólo lectura, sin cuenta ni datos tuyos). Se puede desactivar en *Ajustes*. Nunca descarga ni ejecuta nada por sí mismo: "Descargar" abre el archivo en tu navegador.
 - `dist/`, `config.json` y los logs están excluidos del repositorio (`.gitignore`).
