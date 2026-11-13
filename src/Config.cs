@@ -31,6 +31,10 @@ namespace MonitorIPs
         public bool Insecure { get; set; }
         /// <summary>Tiempo de espera propio en ms; 0 = predeterminado según el tipo.</summary>
         public int TimeoutMs { get; set; }
+        /// <summary>Latencia alta propia en ms (tarjeta en ámbar); 0 = valor general.</summary>
+        public int HighLatencyMs { get; set; }
+        /// <summary>Fallos seguidos propios para considerarla caída; 0 = valor general.</summary>
+        public int DownAfter { get; set; }
 
         public TargetConfig()
         {
@@ -57,6 +61,10 @@ namespace MonitorIPs
             if (string.IsNullOrWhiteSpace(Expect)) Expect = "200-399";
             if (TimeoutMs < 0) TimeoutMs = 0;
             if (TimeoutMs > 60000) TimeoutMs = 60000;
+            if (HighLatencyMs < 0) HighLatencyMs = 0;
+            if (HighLatencyMs > 60000) HighLatencyMs = 60000;
+            if (DownAfter < 0) DownAfter = 0;
+            if (DownAfter > 50) DownAfter = 50;
             if (Check == "http")
             {
                 Uri u;
@@ -149,6 +157,10 @@ namespace MonitorIPs
         public bool TrayHintShown { get; set; }
         /// <summary>Días de historial por minuto que se conservan (history\).</summary>
         public int HistoryDays { get; set; }
+        /// <summary>Buscar versiones nuevas en GitHub Releases (al arrancar y cada 24 h).</summary>
+        public bool UpdateCheck { get; set; }
+        /// <summary>Versión que el usuario decidió omitir ("Omitir esta versión").</summary>
+        public string SkippedVersion { get; set; }
 
         public AppConfig()
         {
@@ -163,6 +175,8 @@ namespace MonitorIPs
             ShowEvents = true;
             CloseToTray = true;
             HistoryDays = 90;
+            UpdateCheck = true;
+            SkippedVersion = "";
         }
 
         public void Normalize()
@@ -260,9 +274,9 @@ namespace MonitorIPs
             if (cfg == null)
             {
                 cfg = new AppConfig();
-                // Primer arranque: las IPs que se vigilaban con ping -t.
-                foreach (var ip in new[] { "172.17.16.205", "10.64.12.1", "10.225.146.130" })
-                    cfg.Targets.Add(new TargetConfig { Host = ip, Group = "Seguimiento diario" });
+                // Primer arranque: dos ejemplos públicos para ver el monitor funcionando (se pueden borrar).
+                cfg.Targets.Add(new TargetConfig { Name = "Google DNS", Host = "8.8.8.8", Group = "Ejemplos" });
+                cfg.Targets.Add(new TargetConfig { Name = "Cloudflare DNS", Host = "1.1.1.1", Group = "Ejemplos" });
             }
             cfg.Normalize();
             return cfg;
