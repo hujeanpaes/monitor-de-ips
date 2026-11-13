@@ -26,8 +26,8 @@ namespace MonitorIPs
         static HttpListener listener;
         static AppConfig config;
         static MonitorEngine engine;
-        static long lastBeat;     // ms de la Ãºltima llamada a la API; 0 = la UI aÃºn no se conectÃ³
-        static long byeAt;        // ms en que la ventana avisÃ³ de que se cerraba (pagehide)
+        static long lastBeat;     // ms de la última llamada a la API; 0 = la UI aún no se conectó
+        static long byeAt;        // ms en que la ventana avisó de que se cerraba (pagehide)
         static volatile bool quitRequested;
         static readonly long startedAt = Util.NowMs();
         static TrayApp tray;
@@ -49,7 +49,7 @@ namespace MonitorIPs
             var mutex = new Mutex(true, "Local\\MonitorIPs_SingleInstance_v1", out created);
             if (!created)
             {
-                // Ya estÃ¡ corriendo: traer su ventana al frente o abrir una nueva hacia esa instancia.
+                // Ya está corriendo: traer su ventana al frente o abrir una nueva hacia esa instancia.
                 if (!trayMode && !WindowFocus.TryFocus())
                     try { OpenWindow(int.Parse(File.ReadAllText(PortFile).Trim())); } catch { }
                 return;
@@ -81,7 +81,7 @@ namespace MonitorIPs
                 return;
             }
 
-            // Bucle de la bandeja; Tick() decide cuÃ¡ndo terminar.
+            // Bucle de la bandeja; Tick() decide cuándo terminar.
             System.Windows.Forms.Application.Run(tray);
 
             engine.StopAll();
@@ -94,7 +94,7 @@ namespace MonitorIPs
 
         // ------------------------------------------------------------------ ciclo de vida (llamado por la bandeja)
 
-        /// <summary>Â¿Hay una ventana del monitor abierta? (la UI consulta la API cada segundo)</summary>
+        /// <summary>¿Hay una ventana del monitor abierta? (la UI consulta la API cada segundo)</summary>
         static bool WindowOpen()
         {
             long beat = Interlocked.Read(ref lastBeat);
@@ -103,38 +103,38 @@ namespace MonitorIPs
             return Interlocked.Read(ref byeAt) > beat ? since < 3000 : since < 10000;
         }
 
-        /// <summary>Cada segundo, en el hilo de la bandeja. Devuelve true para cerrar la aplicaciÃ³n.</summary>
+        /// <summary>Cada segundo, en el hilo de la bandeja. Devuelve true para cerrar la aplicación.</summary>
         internal static bool Tick()
         {
             if (quitRequested) return true;
             bool open = WindowOpen();
             if (windowWasOpen && !open)
             {
-                if (!config.CloseToTray) return true; // comportamiento clÃ¡sico: cerrar la ventana = salir
+                if (!config.CloseToTray) return true; // comportamiento clásico: cerrar la ventana = salir
                 if (!config.TrayHintShown)
                 {
                     config.TrayHintShown = true;
                     Store.Save(config);
                     tray.ShowHint("Monitor de IPs sigue vigilando",
-                        "EstÃ¡ en la bandeja, junto al reloj. Haz clic en el icono para abrirlo; para cerrarlo del todo: clic derecho â†’ Salir del monitor.");
+                        "Está en la bandeja, junto al reloj. Haz clic en el icono para abrirlo; para cerrarlo del todo: clic derecho → Salir del monitor.");
                 }
             }
             windowWasOpen = open;
-            // la ventana nunca llegÃ³ a conectar (y no se arrancÃ³ en la bandeja ni se quiere quedar en ella)
+            // la ventana nunca llegó a conectar (y no se arrancó en la bandeja ni se quiere quedar en ella)
             if (!config.CloseToTray && !trayMode && Interlocked.Read(ref lastBeat) == 0 && Util.NowMs() - startedAt > 120000) return true;
             return false;
         }
 
-        /// <summary>Con la ventana cerrada, las caÃ­das y recuperaciones se avisan desde la bandeja.</summary>
+        /// <summary>Con la ventana cerrada, las caídas y recuperaciones se avisan desde la bandeja.</summary>
         static void OnEngineEvent(MonitorEvent ev)
         {
             if ((ev.Type != "down" && ev.Type != "up") || tray == null || WindowOpen()) return;
             Interlocked.Increment(ref trayAlerts);
             string name = string.IsNullOrEmpty(ev.Name) ? ev.Host : ev.Name;
             if (ev.Type == "down")
-                tray.Post(() => tray.ShowAlert("âš  " + name + " sin respuesta", ev.Host + (string.IsNullOrEmpty(ev.Detail) ? "" : " Â· " + ev.Detail), true));
+                tray.Post(() => tray.ShowAlert("⚠ " + name + " sin respuesta", ev.Host + (string.IsNullOrEmpty(ev.Detail) ? "" : " · " + ev.Detail), true));
             else
-                tray.Post(() => tray.ShowAlert("âœ” " + name + " recuperada", ev.Host + " Â· estuvo caÃ­da " + Duration(ev.Duration), false));
+                tray.Post(() => tray.ShowAlert("✔ " + name + " recuperada", ev.Host + " · estuvo caída " + Duration(ev.Duration), false));
         }
 
         static string Duration(double seconds)
@@ -245,7 +245,7 @@ namespace MonitorIPs
                 if (path.StartsWith("/api/"))
                 {
                     string tk = req.Headers["X-Token"] ?? req.QueryString["token"];
-                    if (tk != token) { SendJson(res, 403, new Dictionary<string, object> { { "error", "token invÃ¡lido" } }); return; }
+                    if (tk != token) { SendJson(res, 403, new Dictionary<string, object> { { "error", "token inválido" } }); return; }
                     Interlocked.Exchange(ref lastBeat, Util.NowMs());
                     Dictionary<string, object> body = null;
                     if (req.HasEntityBody)
@@ -285,7 +285,7 @@ namespace MonitorIPs
 
         // ------------------------------------------------------------------ API
 
-        /// <summary>Todas las rutas /api/*. Cualquier llamada cuenta como seÃ±al de vida de la ventana.</summary>
+        /// <summary>Todas las rutas /api/*. Cualquier llamada cuenta como señal de vida de la ventana.</summary>
         static object Api(string path, System.Collections.Specialized.NameValueCollection q, Dictionary<string, object> b)
         {
             switch (path)
@@ -401,7 +401,7 @@ namespace MonitorIPs
             throw new ArgumentException("Ruta desconocida: " + path);
         }
 
-        /// <summary>"ids": [..] en el cuerpo. SÃ³lo "all": true explÃ­cito devuelve null (= todos).</summary>
+        /// <summary>"ids": [..] en el cuerpo. Sólo "all": true explícito devuelve null (= todos).</summary>
         static List<string> Ids(Dictionary<string, object> b)
         {
             if (Bool(b, "all")) return null;
@@ -434,7 +434,7 @@ namespace MonitorIPs
                 System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d) ? d : def;
         }
 
-        /// <summary>Una lÃ­nea por equipo: "10.0.0.1", "10.0.0.1 Router sede", "Router sede;10.0.0.1", etc.</summary>
+        /// <summary>Una línea por equipo: "10.0.0.1", "10.0.0.1 Router sede", "Router sede;10.0.0.1", etc.</summary>
         static int Bulk(string text, string group, int interval)
         {
             int added = 0;
